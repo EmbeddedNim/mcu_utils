@@ -10,7 +10,8 @@ export Level
 
 const
   McuUtilsLoggingLevel* {.strdefine.} = "lvlAll"
-  mcuUtilsLevel = parseEnum[Level](McuUtilsLoggingLevel)
+
+var McuUtilsLevel {.compileTime.} = parseEnum[Level](McuUtilsLoggingLevel)
 
 template initLogging*(args: varargs[untyped]) = 
   discard args
@@ -18,10 +19,15 @@ template initLogging*(args: varargs[untyped]) =
 macro logImpl(level: static[Level]; msg: string, args: varargs[string, `$`]) =
   let lvl: int = level.ord()
   result = nnkStmtList.newTree()
-  if lvl >= ord(mcuUtilsLevel):
-    # result = nnkStmtList.newTree()
-    # let v = args.mapIt(newCall("$", it))
-    result.add newCall("echo", msg, args)
+  echo "LVL: ", lvl, " McuUtilsLevel:", McuUtilsLevel
+  if lvl >= ord(McuUtilsLevel):
+    for i in countdown(args.len(), 0, 1):
+      args.insert(i, newStrLitNode(" "))
+    args.insert(0, msg)
+    result.add newCall("echo", args[0..^1])
+
+macro setLogLevel*(level: static[Level]) =
+  McuUtilsLevel = level
 
 template log*(level: static[Level], msg: string, args: varargs[string, `$`]) = logImpl(lvlDebug, msg, args) 
 
@@ -33,5 +39,13 @@ template logWarn*(msg: string, args: varargs[string, `$`]) = logImpl(lvlWarn, ms
 template logNotice*(msg: string, args: varargs[string, `$`]) = logImpl(lvlNotice, msg, args) 
 
 when isMainModule:
-  logDebug("there's bug's?", "never!")
+  var a = 10
+
+  setLogLevel(lvlDebug)
+  logDebug("a: there's bug's?", "never!")
+  logWarn("a: there's bug's?", "value:", a)
+
+  setLogLevel(lvlInfo)
+  logDebug("b: there's bug's?", "never!")
+  logWarn("b: there's bug's?", "value:", a)
 
