@@ -43,9 +43,10 @@ when isMainModule:
 
   setLogLevel(lvlDebug)
   logDebug("a: there's bug's?", "never!")
-  logWarn("a: there's bug's?", "value:", a)
+  logWarn("a: warn there's bug's?", "value:", a)
 
   setLogLevel(lvlInfo)
   logDebug("b: there's bug's?", "never!")
-  logWarn("b: there's bug's?", "value:", a)
+  logInfo("b: info there's bug's?", "value:", a)
+  logWarn("b: warn there's bug's?", "value:", a)
 
