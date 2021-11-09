@@ -24,10 +24,10 @@ macro logImpl(level: static[Level]; args: varargs[string, `$`]) =
 
 template log*(level: static[Level], args: varargs[string, `$`]) = logImpl(lvlDebug, args) 
 
-template debug*(args: varargs[string, `$`]) = logImpl(lvlDebug, args) 
-template error*(args: varargs[string, `$`]) = logImpl(lvlError, args) 
-template fatal*(args: varargs[string, `$`]) = logImpl(lvlFatal, args) 
-template info*(args: varargs[string, `$`]) = logImpl(lvlInfo, args) 
-template warn*(args: varargs[string, `$`]) = logImpl(lvlWarn, args) 
-template notice*(args: varargs[string, `$`]) = logImpl(lvlNotice, args) 
+template logDebug*(args: varargs[string, `$`]) = logImpl(lvlDebug, args) 
+template logError*(args: varargs[string, `$`]) = logImpl(lvlError, args) 
+template logFatal*(args: varargs[string, `$`]) = logImpl(lvlFatal, args) 
+template logInfo*(args: varargs[string, `$`]) = logImpl(lvlInfo, args) 
+template logWarn*(args: varargs[string, `$`]) = logImpl(lvlWarn, args) 
+template logNotice*(args: varargs[string, `$`]) = logImpl(lvlNotice, args) 
 
