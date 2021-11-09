@@ -17,6 +17,7 @@ template initLogging*(args: varargs[untyped]) =
 
 macro logImpl(level: static[Level]; msg: string, args: varargs[string, `$`]) =
   let lvl: int = level.ord()
+  result = nnkStmtList.newTree()
   if lvl >= ord(mcuUtilsLevel):
     # result = nnkStmtList.newTree()
     # let v = args.mapIt(newCall("$", it))
@@ -30,4 +31,7 @@ template logFatal*(msg: string, args: varargs[string, `$`]) = logImpl(lvlFatal, 
 template logInfo*(msg: string, args: varargs[string, `$`]) = logImpl(lvlInfo, msg, args) 
 template logWarn*(msg: string, args: varargs[string, `$`]) = logImpl(lvlWarn, msg, args) 
 template logNotice*(msg: string, args: varargs[string, `$`]) = logImpl(lvlNotice, msg, args) 
+
+when isMainModule:
+  logDebug("there's bug's?", "never!")
 
