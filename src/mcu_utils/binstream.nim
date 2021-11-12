@@ -50,7 +50,7 @@ when system.cpuEndian == littleEndian:
     var res: uint64
     swapEndian64(addr(res), unsafeAddr(val))
     s.write(res)
-  proc readUint8*[ByteStream](s: ByteStream): uint16 =
+  proc readUint8*[ByteStream](s: ByteStream): uint8 =
     result = cast[uint16](s.readInt8())
   proc readUint16*[ByteStream](s: ByteStream): uint16 =
     var tmp: uint16 = cast[uint16](s.readInt16)
@@ -71,10 +71,10 @@ else:
   proc writeUint16*[ByteStream](s: ByteStream, val: uint16) = s.write(val)
   proc writeUint32*[ByteStream](s: ByteStream, val: uint32) = s.write(val)
   proc writeUint64*[ByteStream](s: ByteStream, val: uint64) = s.write(val)
-  proc readUint8*[ByteStream](s: ByteStream): uint16 = cast[uint8](s.readInt8)
-  proc readUint16*[ByteStream](s: ByteStream): uint16 = cast[uint16](s.readInt16)
-  proc readUint32*[ByteStream](s: ByteStream): uint32 = cast[uint32](s.readInt32)
-  proc readUint64*[ByteStream](s: ByteStream): uint64 = cast[uint64](s.readInt64)
+  proc readUint8*[ByteStream](s: ByteStream): uint16 = cast[uint8](s.readChar())
+  proc readUint16*[ByteStream](s: ByteStream): uint16 = cast[uint16](s.readInt16())
+  proc readUint32*[ByteStream](s: ByteStream): uint32 = cast[uint32](s.readInt32())
+  proc readUint64*[ByteStream](s: ByteStream): uint64 = cast[uint64](s.readInt64())
 
   # proc take8_8*[T:uint8|char|int8](val: T): uint8 {.inline.} = uint8(val)
   # proc take16_8*[T:uint8|char|int8](val: T): uint16 {.inline.} = uint16(val)
