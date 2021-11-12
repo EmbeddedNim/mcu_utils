@@ -51,7 +51,7 @@ when system.cpuEndian == littleEndian:
     swapEndian64(addr(res), unsafeAddr(val))
     s.write(res)
   proc readUint8*[ByteStream](s: ByteStream): uint8 =
-    result = cast[uint16](s.readInt8())
+    result = cast[uint16](s.readChar())
   proc readUint16*[ByteStream](s: ByteStream): uint16 =
     var tmp: uint16 = cast[uint16](s.readInt16)
     swapEndian16(addr(result), addr(tmp))
