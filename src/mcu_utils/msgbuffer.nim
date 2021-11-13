@@ -109,6 +109,9 @@ proc readMsgBufferRemaining*(s: MsgBuffer): MsgBuffer =
 proc readChar*(s: MsgBuffer): char =
   s.read(result)
 
+proc readInt8*(s: MsgBuffer): int8 =
+  s.read(result)
+
 proc readInt16*(s: MsgBuffer): int16 =
   s.read(result)
 
