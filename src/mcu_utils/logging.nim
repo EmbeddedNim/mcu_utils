@@ -4,9 +4,47 @@ import system
 
 import macros
 
-from std/logging import Level
+# from std/logging import Level
 
-export Level
+# export Level
+
+type
+  Level* = enum ## \
+    ## Enumeration of logging levels.
+    ##
+    ## Debug messages represent the lowest logging level, and fatal error
+    ## messages represent the highest logging level. ``lvlAll`` can be used
+    ## to enable all messages, while ``lvlNone`` can be used to disable all
+    ## messages.
+    ##
+    ## Typical usage for each logging level, from lowest to highest, is
+    ## described below:
+    ##
+    ## * **Debug** - debugging information helpful only to developers
+    ## * **Info** - anything associated with normal operation and without
+    ##   any particular importance
+    ## * **Notice** - more important information that users should be
+    ##   notified about
+    ## * **Warn** - impending problems that require some attention
+    ## * **Error** - error conditions that the application can recover from
+    ## * **Fatal** - fatal errors that prevent the application from continuing
+    ##
+    ## It is completely up to the application how to utilize each level.
+    ##
+    ## Individual loggers have a ``levelThreshold`` field that filters out
+    ## any messages with a level lower than the threshold. There is also
+    ## a global filter that applies to all log messages, and it can be changed
+    ## using the `setLogFilter proc<#setLogFilter,Level>`_.
+    lvlAll,     ## All levels active
+    lvlDebug,   ## Debug level and above are active
+    lvlInfo,    ## Info level and above are active
+    lvlNotice,  ## Notice level and above are active
+    lvlWarn,    ## Warn level and above are active
+    lvlError,   ## Error level and above are active
+    lvlFatal,   ## Fatal level and above are active
+    lvlNone     ## No levels active; nothing is logged
+
+
 
 const
   McuUtilsLoggingLevel* {.strdefine.} = "lvlAll"
