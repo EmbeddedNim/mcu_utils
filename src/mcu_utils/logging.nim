@@ -76,6 +76,12 @@ template logInfo*(msg: string, args: varargs[string, `$`]) = logImpl(lvlInfo, ms
 template logWarn*(msg: string, args: varargs[string, `$`]) = logImpl(lvlWarn, msg, args) 
 template logNotice*(msg: string, args: varargs[string, `$`]) = logImpl(lvlNotice, msg, args) 
 
+template logException*(ex: ref Exception, modName: string, lvl: static[Level]) =
+  log(lvl, "[", modName, "]: exception message: ", getCurrentExceptionMsg())
+  let stes = getStackTraceEntries(e)
+  for ste in stes:
+    log(lvl, "[", modName, "]: exception: ", $ste)
+
 when isMainModule:
   var a = 10
 
