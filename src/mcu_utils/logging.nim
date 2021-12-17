@@ -77,8 +77,11 @@ template logWarn*(msg: string, args: varargs[string, `$`]) = logImpl(lvlWarn, ms
 template logNotice*(msg: string, args: varargs[string, `$`]) = logImpl(lvlNotice, msg, args) 
 
 template logException*(ex: ref Exception, modName: string, lvl: static[Level]) =
+  # Log an exception stacktrace piecemeal in order to avoid 
+  # large memory usage for big stack traces. These can be upwards
+  # of 4kB which can quickly become problematic on small HEAPs
   log(lvl, "[", modName, "]: exception message: ", getCurrentExceptionMsg())
-  let stes = getStackTraceEntries(e)
+  let stes = getStackTraceEntries(ex)
   for ste in stes:
     log(lvl, "[", modName, "]: exception: ", $ste)
 
