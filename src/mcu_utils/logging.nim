@@ -57,7 +57,6 @@ template initLogging*(args: varargs[untyped]) =
 macro logImpl(level: static[Level]; msg: string, args: varargs[string, `$`]) =
   let lvl: int = level.ord()
   result = nnkStmtList.newTree()
-  echo "LVL: ", lvl, " McuUtilsLevel:", McuUtilsLevel
   if lvl >= ord(McuUtilsLevel):
     for i in countdown(args.len(), 0, 1):
       args.insert(i, newStrLitNode(" "))
