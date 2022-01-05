@@ -31,50 +31,50 @@ import endians
 #-------------------------------------
 
 when system.cpuEndian == littleEndian:
-  proc takeByte*(val: uint8): uint8 {.inline.} = val
-  proc takeByte*(val: uint16): uint8 {.inline.} = uint8(val and 0xFF)
-  proc takeByte*(val: uint32): uint8 {.inline.} = uint8(val and 0xFF)
-  proc takeByte*(val: uint64): uint8 {.inline.} = uint8(val and 0xFF)
+  proc topByte*(val: uint8): uint8 {.inline.} = val
+  proc topByte*(val: uint16): uint8 {.inline.} = uint8(val and 0xFF)
+  proc topByte*(val: uint32): uint8 {.inline.} = uint8(val and 0xFF)
+  proc topByte*(val: uint64): uint8 {.inline.} = uint8(val and 0xFF)
 
-  proc writeUint8*[ByteStream](s: ByteStream, val: uint8) =
+  proc writeUintBe8*[ByteStream](s: ByteStream, val: uint8) =
     s.write(val)
-  proc writeUint16*[ByteStream](s: ByteStream, val: uint16) =
+  proc writeUintBe16*[ByteStream](s: ByteStream, val: uint16) =
     var res: uint16
     swapEndian16(addr(res), unsafeAddr(val))
     s.write(res)
-  proc writeUint32*[ByteStream](s: ByteStream, val: uint32) =
+  proc writeUintBe32*[ByteStream](s: ByteStream, val: uint32) =
     var res: uint32
     swapEndian32(addr(res), unsafeAddr(val))
     s.write(res)
-  proc writeUint64*[ByteStream](s: ByteStream, val: uint64) =
+  proc writeUintBe64*[ByteStream](s: ByteStream, val: uint64) =
     var res: uint64
     swapEndian64(addr(res), unsafeAddr(val))
     s.write(res)
-  proc readUint8*[ByteStream](s: ByteStream): uint8 =
+  proc readUintBe8*[ByteStream](s: ByteStream): uint8 =
     result = cast[uint8](s.readInt8())
-  proc readUint16*[ByteStream](s: ByteStream): uint16 =
+  proc readUintBe16*[ByteStream](s: ByteStream): uint16 =
     var tmp: uint16 = cast[uint16](s.readInt16())
     swapEndian16(addr(result), addr(tmp))
-  proc readUint32*[ByteStream](s: ByteStream): uint32 =
+  proc readUintBe32*[ByteStream](s: ByteStream): uint32 =
     var tmp: uint32 = cast[uint32](s.readInt32())
     swapEndian32(addr(result), addr(tmp))
-  proc readUint64*[ByteStream](s: ByteStream): uint64 =
+  proc readUintBe64*[ByteStream](s: ByteStream): uint64 =
     var tmp: uint64 = cast[uint64](s.readInt64())
     swapEndian64(addr(result), addr(tmp))
 else:
-  proc takeByte*(val: uint8): uint8 {.inline.} = val
-  proc takeByte*(val: uint16): uint8 {.inline.} = (val shr 8) and 0xFF
-  proc takeByte*(val: uint32): uint8 {.inline.} = (val shr 24) and 0xFF
-  proc takeByte*(val: uint64): uint8 {.inline.} = uint8((val shr 56) and 0xFF)
+  proc topByte*(val: uint8): uint8 {.inline.} = val
+  proc topByte*(val: uint16): uint8 {.inline.} = (val shr 8) and 0xFF
+  proc topByte*(val: uint32): uint8 {.inline.} = (val shr 24) and 0xFF
+  proc topByte*(val: uint64): uint8 {.inline.} = uint8((val shr 56) and 0xFF)
 
-  proc writeUint8*[ByteStream](s: ByteStream, val: uint8) = s.write(val)
-  proc writeUint16*[ByteStream](s: ByteStream, val: uint16) = s.write(val)
-  proc writeUint32*[ByteStream](s: ByteStream, val: uint32) = s.write(val)
-  proc writeUint64*[ByteStream](s: ByteStream, val: uint64) = s.write(val)
-  proc readUint8*[ByteStream](s: ByteStream): uint16 = cast[uint8](s.readChar())
-  proc readUint16*[ByteStream](s: ByteStream): uint16 = cast[uint16](s.readInt16())
-  proc readUint32*[ByteStream](s: ByteStream): uint32 = cast[uint32](s.readInt32())
-  proc readUint64*[ByteStream](s: ByteStream): uint64 = cast[uint64](s.readInt64())
+  proc writeUintBe8*[ByteStream](s: ByteStream, val: uint8) = s.write(val)
+  proc writeUintBe16*[ByteStream](s: ByteStream, val: uint16) = s.write(val)
+  proc writeUintBe32*[ByteStream](s: ByteStream, val: uint32) = s.write(val)
+  proc writeUintBe64*[ByteStream](s: ByteStream, val: uint64) = s.write(val)
+  proc readUintBe8*[ByteStream](s: ByteStream): uint16 = cast[uint8](s.readChar())
+  proc readUintBe16*[ByteStream](s: ByteStream): uint16 = cast[uint16](s.readInt16())
+  proc readUintBe32*[ByteStream](s: ByteStream): uint32 = cast[uint32](s.readInt32())
+  proc readUintBe64*[ByteStream](s: ByteStream): uint64 = cast[uint64](s.readInt64())
 
   # proc take8_8*[T:uint8|char|int8](val: T): uint8 {.inline.} = uint8(val)
   # proc take16_8*[T:uint8|char|int8](val: T): uint16 {.inline.} = uint16(val)
