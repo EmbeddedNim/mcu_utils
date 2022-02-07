@@ -14,3 +14,8 @@ template basicMathBorrows(T: untyped) =
 
 basicMathBorrows(Millis)
 basicMathBorrows(Micros)
+
+proc repr*(ts: Micros): string =
+  return $(ts.int) & "'us "
+proc repr*(ts: Millis): string =
+  return $(ts.int) & "'ms "
