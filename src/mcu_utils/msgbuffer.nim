@@ -33,29 +33,88 @@ when not declared SomeFloat:
 
 import macros, streams
 import binstream
+import std/isolation
+
 
 export binstream
 
 type
 
   MsgBuffer* = ref object
-    data*: string
+    data: ptr UncheckedArray[byte]
+    size: int
     pos*: int
 
-proc init*(x: typedesc[MsgBuffer], cap: int = 0): MsgBuffer =
-  result = new(x)
-  result.data = newStringOfCap(cap)
-  result.pos = 0
+proc raiseNilAccess() {.noinline.} =
+  raise newException(NilAccessDefect, "dereferencing nil msg buffer pointer")
 
-proc init*(x: typedesc[MsgBuffer], data: string): MsgBuffer =
-  result = new(x)
-  shallowCopy(result.data, data)
-  result.pos = 0
+template checkNotNil(p: typed) =
+  when compileOption("boundChecks"):
+    {.line.}:
+      if p.isNil:
+        raiseNilAccess()
+
+proc `=destroy`(p: var typeof(MsgBuffer()[])) =
+  if p.data != nil:
+    deallocShared(p.data)
+
+# proc `=copy`*(dest: var MsgBuffer, src: MsgBuffer) {.error.}
+#   ## The copy operation is disallowed for `MsgBuffer`, it
+#   ## can only be moved.
+
+proc setLen*(p: MsgBuffer, size: int) =
+  if p.data != nil:
+    deallocShared(p.data)
+  p.size = size
+  p.data = cast[ptr UncheckedArray[byte]](allocShared(size))
+
+proc len*(p: MsgBuffer): int =
+  result = p.size
+
+proc newMsgBuffer*(size: int): MsgBuffer  =
+  ## Returns a new msg buffer
+  result.size = size
+  # result.data = cast[ptr UncheckedArray[byte]](allocShared(size))
+  setLen(result, size)
+  # thanks to '.nodestroy' we don't have to use allocShared0 here.
+
+proc newMsgBuffer*(val: string): MsgBuffer {.nodestroy.} =
+  ## Returns a unique pointer which has exclusive ownership of the value.
+  result.data = cast[ptr UncheckedArray[byte]](allocShared(sizeof(byte)))
+  # thanks to '.nodestroy' we don't have to use allocShared0 here.
+  # This is compiled into a copyMem operation, no need for a sink
+  # here either.
+
+proc isNil*(p: MsgBuffer): bool {.inline.} =
+  p.data == nil
+
+proc `[]`*(p: MsgBuffer, idx: int): var byte {.inline.} =
+  ## Returns a mutable view of the internal value of `p`.
+  checkNotNil(p)
+  p.data[idx]
+
+proc `[]=`*(p: MsgBuffer, idx: int, data: byte) {.inline.} =
+  checkNotNil(p)
+  p.data[idx] = data
+
+proc `$`*(p: MsgBuffer): string {.inline.} =
+  if p.data == nil: "nil"
+  else: "(val: " & $p.data.toOpenArray(0, p.size) & ")"
+
+# proc init*(x: typedesc[MsgBuffer], cap: int = 0): MsgBuffer =
+#   result = new(x)
+#   result.data = newStringOfCap(cap)
+#   result.pos = 0
+
+# proc init*(x: typedesc[MsgBuffer], data: string): MsgBuffer =
+#   result = new(x)
+#   shallowCopy(result.data, data)
+#   result.pos = 0
 
 proc writeData(s: MsgBuffer, buffer: pointer, bufLen: int) =
   if bufLen <= 0: return
-  if s.pos + bufLen > s.data.len:
-    setLen(s.data, s.pos + bufLen)
+  if s.pos + bufLen > s.len:
+    setLen(s, s.pos + bufLen)
   copyMem(addr(s.data[s.pos]), buffer, bufLen)
   inc(s.pos, bufLen)
 
