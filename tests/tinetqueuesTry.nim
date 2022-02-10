@@ -21,6 +21,13 @@ proc producerThread(args: (InetStrQueue, int, int)) {.thread.} =
     echo "-> Producer: tx_data: putting: ", i, " -> ", repr(txData)
     while not myFifo.trySend(txData):
       echo "queue full... trying again."
+      # this will print txData string
+      echo "txData tosend: ", txData
+      os.sleep(40)
+
+    # this will print empty string
+    echo "txData sent: ", txData
+
     echo "-> Producer: tx_data: sent: ", i
   echo "Done Producer: "
   
@@ -36,6 +43,7 @@ proc consumerThread(args: (InetStrQueue, int, int)) {.thread.} =
     var rxData: string
     while not myFifo.tryRecv(rxData):
       echo "no data... trying again."
+      os.sleep(40)
     echo "<- Consumer: rx_data: got: ", i, " <- ", repr(rxData)
 
   echo "Done Consumer "
