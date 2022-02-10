@@ -66,14 +66,20 @@ proc newInetEventQueue*[T](size: int): InetEventQueue[T] =
   result.evt = newSelectEvent()
   result.chan = newChan[T](size)
 
+proc init*[T](x: typedesc[InetEventQueue[T]], size: int): InetEventQueue[T] =
+  result = newInetEventQueue[T](size)
+
 proc init*(x: typedesc[InetMsgQueue], size: int): InetMsgQueue =
   result = newInetEventQueue[InetMsgQueueItem](size)
 
-template send*[T](rq: InetEventQueue[T], cid: InetClientHandle, item: sink Isolated[T]) =
+proc send*[T](rq: InetEventQueue[T], item: sink Isolated[T]) =
   rq.chan.send(item)
   rq.evt.trigger()
 
-template trySend*[T](rq: InetEventQueue, cid: InetClientHandle, item: var Isolated[T]): bool =
+template send*[T](rq: InetEventQueue[T], item: T) =
+  send(rq, isolate(item))
+
+template trySend*[T](rq: InetEventQueue[T], item: var T): bool =
   let res = channels.trySend(rq.chan, qitem)
   if res: rq.evt.trigger()
   return res
@@ -89,11 +95,11 @@ template tryRecv*[T](rq: InetEventQueue, item: var T): bool =
 
 proc sendMsg*(rq: InetMsgQueue, cid: InetClientHandle, data: sink QMsgBuffer) =
   var item = isolate InetMsgQueueItem.init(cid, data)
-  send(rq, cid, item)
+  send(rq, item)
 
 template trySendMsg*(rq: InetMsgQueue, cid: InetClientHandle, data: var QMsgBuffer): bool =
   var item = InetMsgQueueItem.init(cid, data)
-  trySend(rq, cid, item)
+  trySend(rq, item)
 
 proc recvMsg*(rq: InetMsgQueue): InetMsgQueueItem =
   result = recv(rq)

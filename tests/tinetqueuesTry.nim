@@ -3,7 +3,10 @@ import std/random
 
 import mcu_utils/inetqueues
 
-proc producerThread(args: (InetMsgQueue, int, int)) =
+type
+  InetStrQueue = InetEventQueue[string]
+
+proc producerThread(args: (InetStrQueue, int, int)) {.thread.} =
   var
     myFifo = args[0]
     count = args[1]
@@ -12,15 +15,16 @@ proc producerThread(args: (InetMsgQueue, int, int)) =
   for i in 0..<count:
     os.sleep(rand(tsrand))
     # /* create data item to send */
-    var txData = newQMsgBuffer("txNum" & $(1234 + 100 * i))
+    var txData = "txNum" & $(1234 + 100 * i)
 
     # /* send data to consumers */
     echo "-> Producer: tx_data: putting: ", i, " -> ", repr(txData)
-    myFifo.sendMsg(InetClientHandle.empty(), txData)
+    while not myFifo.trySend(txData):
+      echo "queue full... trying again."
     echo "-> Producer: tx_data: sent: ", i
   echo "Done Producer: "
   
-proc consumerThread(args: (InetMsgQueue, int, int)) =
+proc consumerThread(args: (InetStrQueue, int, int)) {.thread.} =
   var
     myFifo = args[0]
     count = args[1]
@@ -29,15 +33,16 @@ proc consumerThread(args: (InetMsgQueue, int, int)) =
   for i in 0..<count:
     os.sleep(rand(tsrand))
     echo "<- Consumer: rx_data: wait: ", i
-    var item: InetMsgQueueItem = myFifo.recvMsg()
-    let rxData = move item.data
+    var rxData: string
+    while not myFifo.tryRecv(rxData):
+      echo "no data... trying again."
     echo "<- Consumer: rx_data: got: ", i, " <- ", repr(rxData)
 
   echo "Done Consumer "
 
 proc runTestsChannel*() =
   randomize()
-  var myFifo = InetMsgQueue.init(10)
+  var myFifo = InetStrQueue.init(10)
 
 
   producerThread((myFifo, 10, 100))
@@ -47,10 +52,10 @@ proc runTestsChannelThreaded*(ncnt, tsrand: int) =
   echo "\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< "
   echo "[Channel] Begin "
   randomize()
-  var myFifo = InetMsgQueue.init(10)
+  var myFifo = InetStrQueue.init(3)
 
-  var thrp: Thread[(InetMsgQueue, int, int)]
-  var thrc: Thread[(InetMsgQueue, int, int)]
+  var thrp: Thread[(InetStrQueue, int, int)]
+  var thrc: Thread[(InetStrQueue, int, int)]
 
   createThread(thrc, consumerThread, (myFifo, ncnt, tsrand))
   # os.sleep(2000)
