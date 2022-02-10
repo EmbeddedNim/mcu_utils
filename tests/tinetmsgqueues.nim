@@ -3,7 +3,7 @@ import std/random
 
 import mcu_utils/inetqueues
 
-proc producerThread(args: (InetMsgQueue, int, int)) =
+proc producerThread(args: (InetMsgQueue, int, int)) {.thread.} =
   var
     myFifo = args[0]
     count = args[1]
@@ -20,7 +20,7 @@ proc producerThread(args: (InetMsgQueue, int, int)) =
     echo "-> Producer: tx_data: sent: ", i
   echo "Done Producer: "
   
-proc consumerThread(args: (InetMsgQueue, int, int)) =
+proc consumerThread(args: (InetMsgQueue, int, int)) {.thread.} =
   var
     myFifo = args[0]
     count = args[1]
