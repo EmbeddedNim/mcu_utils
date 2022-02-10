@@ -79,7 +79,7 @@ proc send*[T](rq: InetEventQueue[T], item: sink Isolated[T]) =
 template send*[T](rq: InetEventQueue[T], item: T) =
   send(rq, isolate(item))
 
-proc trySend*[T](rq: InetEventQueue[T], item: var Isolated[T]): bool =
+template trySend*[T](rq: InetEventQueue[T], item: var Isolated[T]): bool =
   let res: bool = channels.trySend(rq.chan, item)
   if res: rq.evt.trigger()
   res

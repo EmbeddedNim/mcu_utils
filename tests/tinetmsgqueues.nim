@@ -26,22 +26,18 @@ proc consumerThread(args: (InetMsgQueue, int, int)) {.thread.} =
     count = args[1]
     tsrand = args[2]
   echo "\n===== running consumer ===== "
+  var lastData: string
   for i in 0..<count:
     os.sleep(rand(tsrand))
     echo "<- Consumer: rx_data: wait: ", i
     var item: InetMsgQueueItem = myFifo.recvMsg()
     let rxData = move item.data
     echo "<- Consumer: rx_data: got: ", i, " <- ", repr(rxData)
+    lastData = rxData[].data
+
+  assert lastData == "txNum1834"
 
   echo "Done Consumer "
-
-proc runTestsChannel*() =
-  randomize()
-  var myFifo = InetMsgQueue.init(10)
-
-
-  producerThread((myFifo, 10, 100))
-  consumerThread((myFifo, 10, 100))
 
 proc runTestsChannelThreaded*(ncnt, tsrand: int) =
   echo "\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< "
@@ -60,5 +56,4 @@ proc runTestsChannelThreaded*(ncnt, tsrand: int) =
   echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> "
 
 when isMainModule:
-  runTestsChannelThreaded(100, 120)
   runTestsChannelThreaded(7, 1200)
