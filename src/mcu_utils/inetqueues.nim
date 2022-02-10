@@ -7,6 +7,7 @@ import threading/channels
 import msgbuffer
 import inettypes
 
+export isolation
 export msgbuffer, inettypes
 export channels, smartptrs
 export selectors
