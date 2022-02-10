@@ -10,3 +10,11 @@ srcDir        = "src"
 # Dependencies
 
 requires "nim >= 1.6.0"
+requires "threading >= 0.1.0"
+
+
+task build_integration_tests, "build integration test tools":
+  discard # todo: integrations?
+
+after test:
+  build_integration_testsTask()
