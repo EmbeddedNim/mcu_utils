@@ -15,7 +15,7 @@ proc producerThread(args: (InetStrQueue, int, int)) {.thread.} =
   for i in 0..<count:
     os.sleep(rand(tsrand))
     # /* create data item to send */
-    var txData = "txNum" & $(1234 + 100 * i)
+    var txData = isolate "txNum" & $(1234 + 100 * i)
 
     # /* send data to consumers */
     echo "-> Producer: tx_data: putting: ", i, " -> ", repr(txData)
