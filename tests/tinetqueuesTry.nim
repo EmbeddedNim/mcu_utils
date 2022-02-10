@@ -26,7 +26,7 @@ proc producerThread(args: (InetStrQueue, int, int)) {.thread.} =
       var item = isolate txData
       echo "txData tosend: ", item, " from: ", txData
 
-      res = channels.trySend(myFifo.chan, item)
+      res = myFifo.trySend(item)
       echo "queue full... trying again."
       os.sleep(40)
 

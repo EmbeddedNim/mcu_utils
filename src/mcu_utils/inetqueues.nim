@@ -98,7 +98,7 @@ proc sendMsg*(rq: InetMsgQueue, cid: InetClientHandle, data: sink QMsgBuffer) =
   send(rq, item)
 
 template trySendMsg*(rq: InetMsgQueue, cid: InetClientHandle, data: var QMsgBuffer): bool =
-  var item = InetMsgQueueItem.init(cid, data)
+  var item = isolate InetMsgQueueItem.init(cid, data)
   trySend(rq, item)
 
 proc recvMsg*(rq: InetMsgQueue): InetMsgQueueItem =
