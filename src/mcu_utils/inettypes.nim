@@ -49,7 +49,18 @@ type
   InetClientError* = object of OSError
 
 proc `==`*(a, b: InetClientHandle): bool =
-  result = a[] == b[]
+  let ao: InetClientObj = a[]
+  let bo: InetClientObj = b[]
+  if ao.kind != bo.kind: return false
+  case ao.kind:
+  of clEmpty:
+    discard
+  of clSocket:
+    result = ao.fd == bo.fd
+  of clAddress:
+    result = ao.host == bo.host and ao.port == bo.port
+  of clCanBus:
+    result = ao.msgid == bo.msgid
 
 proc hash*(hdl: InetClientHandle): Hash =
   ## Computes a Hash from `x`.
