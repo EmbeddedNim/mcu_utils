@@ -48,6 +48,9 @@ type
   InetClientDisconnected* = object of OSError
   InetClientError* = object of OSError
 
+proc `==`*(a, b: InetClientHandle): bool =
+  result = a[] == b[]
+
 proc hash*(hdl: InetClientHandle): Hash =
   ## Computes a Hash from `x`.
   var h: Hash = 0
