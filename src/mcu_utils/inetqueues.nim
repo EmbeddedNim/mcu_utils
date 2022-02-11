@@ -58,6 +58,9 @@ proc newInetQueueItem*[T](cid: InetClientHandle, data: sink T): InetQueueItem[T]
   result.cid = cid
   result.data = move data
 
+proc init*[T](x: typedesc[InetQueueItem[T]], cid: InetClientHandle, data: sink T): InetQueueItem[T] =
+  result = newInetQueueItem[T](cid, data)
+
 proc init*(x: typedesc[InetMsgQueueItem], cid: InetClientHandle, data: sink QMsgBuffer): InetMsgQueueItem =
   result = newInetQueueItem[QMsgBuffer](cid, data)
 
