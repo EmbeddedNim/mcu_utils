@@ -1,4 +1,4 @@
-import nativesockets, net, selectors, posix, tables
+import nativesockets, net, selectors, posix, tables, hashes
 
 export nativesockets, net, selectors, posix, tables
 
@@ -47,6 +47,23 @@ type
 type 
   InetClientDisconnected* = object of OSError
   InetClientError* = object of OSError
+
+proc hash*(hdl: InetClientHandle): Hash =
+  ## Computes a Hash from `x`.
+  var h: Hash = 0
+  let obj: InetClientObj = hdl[]
+  h = h !& hash(obj.kind)
+  case obj.kind:
+  of clEmpty:
+    discard
+  of clSocket:
+    h = h !& hash(obj.fd)
+  of clAddress:
+    h = h !& hash(obj.host)
+    h = h !& hash(obj.port)
+  of clCanBus:
+    h = h !& hash(obj.msgid)
+  result = !$h
 
 
 proc newInetAddr*(host: string, port: int, protocol = net.IPPROTO_TCP): InetAddress =
