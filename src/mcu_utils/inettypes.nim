@@ -48,6 +48,22 @@ type
   InetClientDisconnected* = object of OSError
   InetClientError* = object of OSError
 
+proc contains*(a: InetClientHandle, fd: SocketHandle): bool =
+  let ao: InetClientObj = a[]
+  case ao.kind:
+  of clEmpty: discard
+  of clAddress: discard
+  of clCanBus: discard
+  of clSocket: result = ao.fd == fd
+
+proc contains*(a: InetClientHandle, arg: (IpAddress, Port)): bool =
+  let ao: InetClientObj = a[]
+  case ao.kind:
+  of clEmpty: discard
+  of clCanBus: discard
+  of clSocket: discard
+  of clAddress: result = ao.host == arg[0] and ao.port == arg[1]
+
 proc `==`*(a, b: InetClientHandle): bool =
   let ao: InetClientObj = a[]
   let bo: InetClientObj = b[]
