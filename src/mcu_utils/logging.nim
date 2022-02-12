@@ -66,7 +66,8 @@ macro logImpl(level: static[Level]; msg: string, args: varargs[string, `$`]) =
 macro setLogLevel*(level: static[Level]) =
   McuUtilsLevel = level
 
-template log*(level: static[Level], msg: string, args: varargs[string, `$`]) = logImpl(lvlDebug, msg, args) 
+template log*(level: static[Level], msg: string, args: varargs[string, `$`]) =
+  logImpl(level, msg, args) 
 
 template logDebug*(msg: string, args: varargs[string, `$`]) = logImpl(lvlDebug, msg, args) 
 template logError*(msg: string, args: varargs[string, `$`]) = logImpl(lvlError, msg, args) 
