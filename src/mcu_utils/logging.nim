@@ -54,7 +54,7 @@ var McuUtilsLevel {.compileTime.} = parseEnum[Level](McuUtilsLoggingLevel)
 template initLogging*(args: varargs[untyped]) = 
   discard args
 
-macro logImpl(level: static[Level]; msg: string, args: varargs[string, `$`]) =
+macro logImpl(level: static[Level]; msg: string, args: varargs[string, `$`]): untyped =
   let lvl: int = level.ord()
   result = nnkStmtList.newTree()
   if lvl >= ord(McuUtilsLevel):
@@ -68,6 +68,12 @@ macro setLogLevel*(level: static[Level]) =
 
 template log*(level: static[Level], msg: string, args: varargs[string, `$`]) =
   logImpl(level, msg, args) 
+
+template logRunExtra*(level: static[Level], code, normal: untyped): untyped =
+  when level.ord() >= ord(McuUtilsLevel):
+    code
+  else:
+    normal
 
 template logDebug*(msg: string, args: varargs[string, `$`]) = logImpl(lvlDebug, msg, args) 
 template logError*(msg: string, args: varargs[string, `$`]) = logImpl(lvlError, msg, args) 
