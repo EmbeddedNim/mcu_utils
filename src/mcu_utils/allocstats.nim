@@ -10,6 +10,6 @@ template logAllocStats*(level: static[Level], code: untyped) =
     block:
       code
     let stats2 = getAllocStats()
-    log(level, "[allocStats]", lineinfo(code), $(stats2 - stats1))
+    log(level, "[allocStats]", lineinfo(code), "::", $(stats2 - stats1))
   do: 
     code
