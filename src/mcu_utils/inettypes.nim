@@ -34,6 +34,7 @@ type
     of clSocket:
       fd*: SocketHandle
     of clAddress:
+      sfd*: SocketHandle
       host*: IpAddress
       port*: Port
     of clCanBus:
@@ -122,18 +123,20 @@ proc newClientHandle*(fd: SocketHandle, protocol = net.IPPROTO_TCP): InetClientH
     socktype: protocol.toSockType(),
   )
 
-proc newClientHandle*(host: IpAddress, port: Port, protocol = net.IPPROTO_UDP): InetClientHandle =
+proc newClientHandle*(host: IpAddress, port: Port, fd: SocketHandle, protocol = net.IPPROTO_UDP): InetClientHandle =
   result = newConstPtr InetClientObj(
     kind: clAddress,
+    sfd: fd,
     host: host,
     port: port,
     protocol: protocol,
     socktype: protocol.toSockType(),
   )
 
-proc newClientHandle*(host: string, port: int, protocol = net.IPPROTO_UDP): InetClientHandle =
+proc newClientHandle*(host: string, port: int, fd: SocketHandle, protocol = net.IPPROTO_UDP): InetClientHandle =
   result = newConstPtr InetClientObj(
     kind: clAddress,
+    sfd: fd,
     host: parseIpAddress(host),
     port: Port(port),
     protocol: protocol,
