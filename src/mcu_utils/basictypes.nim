@@ -11,6 +11,7 @@ template basicMathBorrows(T: untyped) =
   proc `-` *(x, y: T): T {.borrow.}
   proc `<` *(x, y: T): bool {.borrow.}
   proc `<=` *(x, y: T): bool {.borrow.}
+  proc `==` *(x, y: T): bool {.borrow.}
 
 basicMathBorrows(Millis)
 basicMathBorrows(Micros)
