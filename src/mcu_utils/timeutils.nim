@@ -31,7 +31,7 @@ else:
     let ts = getMonoTime()
     result = Micros(convert(Nanoseconds, Microseconds, ts.ticks))
 
-proc currTimeSML*(): TimeSML =
+proc currTimeSenML*(): TimeSML =
   var ms = 1.0e-3 * millis().int64.toBiggestFloat()
   var us = 1.0e-6 * micros().int64.toBiggestFloat()
   result = TimeSML(ms + us)
