@@ -1,3 +1,4 @@
+import std/hashes
 
 type
   Hertz* = distinct uint
@@ -13,6 +14,7 @@ template basicMathBorrows(T: untyped) =
   proc `<` *(x, y: T): bool {.borrow.}
   proc `<=` *(x, y: T): bool {.borrow.}
   proc `==` *(x, y: T): bool {.borrow.}
+  proc `hash` *(x: T): Hash {.borrow.}
 
 basicMathBorrows(Millis)
 basicMathBorrows(Micros)
