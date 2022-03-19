@@ -33,7 +33,7 @@ else:
 
 proc currTimeSenML*(): TimeSML =
   let mt = getMonoTime()
-  var micros = convert(Nanoseconds, Microseconds, mt.ticks)
+  var micros = 1.0e-6 * convert(Nanoseconds, Microseconds, mt.ticks).toBiggestFloat()
   result = TimeSML(micros)
 
 proc timeSenML*(ms: Millis): TimeSML =
