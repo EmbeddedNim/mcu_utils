@@ -36,7 +36,10 @@ proc currTimeSenML*(): TimeSML =
   var micros = convert(Nanoseconds, Microseconds, mt.ticks)
   result = TimeSML(micros)
 
-proc timeSenML*(ms: Millis, us: Micros): TimeSML =
+proc timeSenML*(ms: Millis): TimeSML =
   var msf = 1.0e-3 * ms.int64.toBiggestFloat()
+  result = TimeSML(msf)
+
+proc timeSenML*(us: Micros): TimeSML =
   var usf = 1.0e-6 * us.int64.toBiggestFloat()
-  result = TimeSML(msf + usf)
+  result = TimeSML(usf)
