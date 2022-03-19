@@ -32,9 +32,9 @@ else:
     result = Micros(convert(Nanoseconds, Microseconds, ts.ticks))
 
 proc currTimeSenML*(): TimeSML =
-  var ms = 1.0e-3 * millis().int64.toBiggestFloat()
-  var us = 1.0e-6 * micros().int64.toBiggestFloat()
-  result = TimeSML(ms + us)
+  let mt = getMonoTime()
+  var micros = convert(Nanoseconds, Microseconds, mt.ticks)
+  result = TimeSML(micros)
 
 proc timeSenML*(ms: Millis, us: Micros): TimeSML =
   var msf = 1.0e-3 * ms.int64.toBiggestFloat()
