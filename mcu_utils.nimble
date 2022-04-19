@@ -9,7 +9,7 @@ srcDir        = "src"
 
 # Dependencies
 
-requires "nim >= 1.6.0"
+requires "nim >= 1.6.6"
 requires "threading >= 0.1.0"
 
 
