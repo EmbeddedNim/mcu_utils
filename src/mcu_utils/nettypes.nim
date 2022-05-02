@@ -1,7 +1,7 @@
 import std/hashes
 
 when defined(zephyr):
-  import nephyr/../zephyr_c/net/znet_if
+  import nephyr/zephyr/net/znet_if
 
 type
   NetIfId* = distinct int
