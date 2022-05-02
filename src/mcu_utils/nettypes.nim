@@ -8,7 +8,7 @@ type
 
   NetIfDevice* = object
     when defined(zephyr):
-      iface*: ptr net_if
+      raw*: ptr net_if
 
 
 proc `<` *(x, y: NetIfId): bool {.borrow.}

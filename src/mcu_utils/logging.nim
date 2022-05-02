@@ -1,6 +1,8 @@
 
 import strutils
 import system
+import os
+import tables
 
 import macros
 
@@ -36,20 +38,32 @@ type
     ## a global filter that applies to all log messages, and it can be changed
     ## using the `setLogFilter proc<#setLogFilter,Level>`_.
     lvlAll,     ## All levels active
+    lvlNone,    ## No levels active; nothing is logged
     lvlDebug,   ## Debug level and above are active
     lvlInfo,    ## Info level and above are active
     lvlNotice,  ## Notice level and above are active
     lvlWarn,    ## Warn level and above are active
     lvlError,   ## Error level and above are active
-    lvlFatal,   ## Fatal level and above are active
-    lvlNone     ## No levels active; nothing is logged
+    lvlFatal    ## Fatal level and above are active
 
 
 
 const
   McuUtilsLoggingLevel* {.strdefine.} = "lvlAll"
+  McuUtilsLoggingModuleLevels* {.strdefine.} = "exampleMcuUtilModule=lvlAll"
 
 var McuUtilsLevel {.compileTime.} = parseEnum[Level](McuUtilsLoggingLevel)
+
+var McuUtilsModuleLevels {.compileTime.}: Table[string, Level] =
+  block:
+    let lvls = McuUtilsLoggingModuleLevels.split(",")
+    var tbl = initTable[string, Level]()
+    for lvs in lvls:
+      let lv = lvs.split("=")
+      assert lv.len() == 2
+      tbl[lv[0]] = parseEnum[Level](lv[1])
+    tbl
+
 
 template initLogging*(args: varargs[untyped]) = 
   discard args
@@ -57,7 +71,10 @@ template initLogging*(args: varargs[untyped]) =
 macro logImpl(level: static[Level]; msg: string, args: varargs[string, `$`]): untyped =
   let lvl: int = level.ord()
   result = nnkStmtList.newTree()
-  if lvl >= ord(McuUtilsLevel):
+  let li = args.lineInfoObj()
+  var (dir, name, ext) = li.filename.splitFile()
+  let modLvl = McuUtilsModuleLevels.getOrDefault(name, lvlNone).ord()
+  if lvl >= ord(McuUtilsLevel) or modLvl >= ord(McuUtilsLevel):
     for i in countdown(args.len(), 0, 1):
       args.insert(i, newStrLitNode(" "))
     args.insert(0, msg)
