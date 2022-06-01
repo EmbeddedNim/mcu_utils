@@ -14,7 +14,7 @@ type
 
 
 ## ========================================================= ##
-## Produce Queue Events
+## Manually Trigger Queue Events
 ## 
 ## ========================================================= ##
 
@@ -67,7 +67,7 @@ proc consumeQueueEvents(args: ThreadArgs) {.thread.} =
   echo "Done Consumer "
 
 ## ========================================================= ##
-## Produce Queue Events
+## Timer-based Queue Events
 ## 
 ## ========================================================= ##
 
