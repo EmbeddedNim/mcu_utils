@@ -17,7 +17,7 @@ proc timerThread(args: ThreadArgs) {.thread.} =
 
 proc producerThread(args: ThreadArgs) {.thread.} =
   echo "\n===== running producer ===== "
-  for i in 0 ..< args.count:
+  for i in 1 .. args.count:
     os.sleep(rand(args.tsrand))
     # /* create data item to send */
     var txData = "txNum" & $(1234 + 100 * i)
@@ -26,8 +26,39 @@ proc producerThread(args: ThreadArgs) {.thread.} =
     echo "-> Producer: tx_data: putting: ", i, " -> ", repr(txData)
     args.queue.send(txData)
     echo "-> Producer: tx_data: sent: ", i
+
   echo "Done Producer: "
   
+proc consumeQueueEvents(args: ThreadArgs) {.thread.} =
+  var queue = args.queue
+
+  echo "\n===== running consumer ===== "
+  var selector = newEventSelector()
+  let queueHasDataEvent = selector.registerQueue(queue)
+  echo fmt"{queueHasDataEvent=}"
+
+  var events: Table[InetEvent, ReadyKey]
+  var count = 0
+
+  loop(selector, -1.Millis, events):
+    # print all events
+    echo fmt"consumer: event: {queueHasDataEvent in events =} "
+
+    withEvent(events, queueHasDataEvent, asKey=readyKey):
+      echo fmt"got new data! event: {queueHasDataEvent=} with {readyKey=}"
+
+      var rxData: string
+      while queue.tryRecv(rxData):
+        inc count
+        echo "<- Consumer: rx_data: got: ", count, " <- ", repr(rxData)
+    
+    echo fmt"{count=} vs {args.count=}"
+    if count >= args.count:
+      break
+    
+  echo "Done Consumer "
+  echo fmt"queue size: {queue.chan.peek()}"
+
 proc consumerThread(args: ThreadArgs) {.thread.} =
   var queue = args.queue
 
@@ -55,12 +86,12 @@ proc runTestsChannelThreaded*(ncnt, tsrand: int) =
   echo "\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< "
   echo "[Channel] Begin "
   randomize()
-  var myFifo = InetEventQueue[string].init(10)
+  var myFifo = InetEventQueue[string].init(4)
 
   var thrp: Thread[ThreadArgs]
   var thrc: Thread[ThreadArgs]
 
-  createThread(thrc, consumerThread, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
+  createThread(thrc, consumeQueueEvents, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
   # os.sleep(2000)
   createThread(thrp, producerThread, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
   joinThreads(thrp, thrc)

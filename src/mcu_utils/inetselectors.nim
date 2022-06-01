@@ -54,12 +54,12 @@ proc newEventSelector*(): EventSelector =
   # Setup and run a new SocketServer.
   result = EventSelector(raw: newSelector[InetEvent]())
 
-proc registerEvent*(selector: EventSelector, event: SelectEvent) =
-  let evtItem = InetEvent(kind: Event.User, se: event)
-  selector.raw.registerEvent(event, evtItem)
+proc registerEvent*(selector: EventSelector, event: SelectEvent): InetEvent {.discardable.} =
+  result = InetEvent(kind: Event.User, se: event)
+  selector.raw.registerEvent(event, result)
 
 proc registerQueue*[T](selector: EventSelector, queue: InetEventQueue[T]): InetEvent {.discardable.} =
-  selector.registerEvent(queue.evt)
+  result = selector.registerEvent(queue.evt)
 
 proc registerTimer*(selector: EventSelector, timeout: int, oneshot: bool): InetEvent {.discardable.} =
   let fd = selector.raw.registerTimer(timeout, oneshot, InetEvent())
@@ -69,7 +69,14 @@ proc registerTimer*(selector: EventSelector, timeout: int, oneshot: bool): InetE
     selector.raw.unregister(fd)
     raise newException(AssertionDefect, "failed to register timer properly")
 
-template loop*(selector: EventSelector, timeout: Millis, events: untyped, handler: untyped)  =
+template withEvent*(events: Table[InetEvent, ReadyKey], event: InetEvent, asKey: untyped, code: untyped) =
+  ## helper function just to check for a given event and return it's key
+  var `asKey` {.inject.}: ReadyKey
+  if events.pop(event, `asKey`):
+    `code`
+
+
+template loop*(selector: EventSelector, timeout: Millis, events: Table[InetEvent, ReadyKey], code: untyped)  =
   while true:
     events.clear()
     let keys: seq[ReadyKey] = selector.raw.select(timeout.int)
@@ -81,7 +88,7 @@ template loop*(selector: EventSelector, timeout: Millis, events: untyped, handle
       else:
         let item: InetEvent = selector.raw.getData(key.fd)
         events[item] = key
-    handler
+    `code`
 
 template loopEvents*(
     selector: Selector[Event],
