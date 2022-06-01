@@ -34,11 +34,27 @@ type
     else:
       discard
 
+proc `==`*(a: InetEvent; b: InetEvent): bool =
+  if a.kind == b.kind:
+    case a.kind
+    of Event.Timer:
+      return a.timeout == b.timeout and a.oneshot == b.oneshot and a.timerfd == b.timerfd
+    of Event.User:
+      return a.se == b.se
+    of Event.Signal:
+      return a.sig == b.sig
+    of Event.Error:
+      return a.errfd == b.errfd and a.errorCode == b.errorCode
+    else:
+      true
+  else:
+    return false
+
 proc newEventSelector*(): EventSelector =
   # Setup and run a new SocketServer.
   result = EventSelector(raw: newSelector[InetEvent]())
 
-proc registerEvent*[T](selector: EventSelector, event: SelectEvent) =
+proc registerEvent*(selector: EventSelector, event: SelectEvent) =
   let evtItem = InetEvent(kind: Event.User, se: event)
   selector.raw.registerEvent(event, evtItem)
 
@@ -59,7 +75,7 @@ template loop*(selector: EventSelector, timeout: Millis, events: untyped, handle
     let keys: seq[ReadyKey] = selector.raw.select(timeout.int)
     logDebug "[selector]::", "keys:", repr(keys)
     for key in keys:
-      if Event.Error in key.events or key.errorCode != 0:
+      if Event.Error in key.events or key.errorCode.int != 0:
         let errItem = InetEvent(kind: Event.Error, errfd: key.fd, errorCode: key.errorCode)
         events[errItem] = key
       else:

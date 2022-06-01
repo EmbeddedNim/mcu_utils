@@ -35,18 +35,20 @@ proc consumerThread(args: ThreadArgs) {.thread.} =
   var selector = newEventSelector()
   selector.registerQueue(queue)
   let defaultTimer = selector.registerTimer(timeout=10, oneshot=true)
+  echo fmt"created timer: {defaultTimer=}"
 
   var events: Table[InetEvent, ReadyKey]
+
   loop(selector, -1.Millis, events):
-    # print all events
-    for evt, key in events:
-      echo fmt"event occurred: {evt=} with {key=}"
-    
     # check specific event
     if defaultTimer in events:
       echo fmt"default timer triggered! "
     
-
+    # print all events
+    for evt, key in events:
+      echo fmt"event occurred: {evt=} with {key=}"
+    
+    
   echo "Done Consumer "
 
 proc runTestsChannelThreaded*(ncnt, tsrand: int) =
@@ -74,8 +76,8 @@ suite "test for InetQueues functionality":
       "City of " & x
     echo fmt"{cityStrings=}"
 
-  # test "faster threaded consumer/producer test":
-    # runTestsChannelThreaded(100, 120)
+  test "faster threaded consumer/producer test":
+    runTestsChannelThreaded(11, 100)
 
   # test "slow threaded consumer/producer test":
     # runTestsChannelThreaded(7, 1200)
