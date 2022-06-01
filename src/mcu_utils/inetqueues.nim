@@ -80,16 +80,20 @@ proc init*(x: typedesc[InetMsgQueue], size: int): InetMsgQueue =
 proc getEvent*[T](q: InetEventQueue[T]): SelectEvent =
   result = q.evt
 
-proc send*[T](rq: InetEventQueue[T], item: sink Isolated[T]) =
+proc send*[T](rq: InetEventQueue[T], item: sink Isolated[T], trigger=true) =
   rq.chan.send(item)
+  if trigger:
+    rq.evt.trigger()
+
+template trigger*[T](rq: InetEventQueue[T]) =
   rq.evt.trigger()
 
-template send*[T](rq: InetEventQueue[T], item: T) =
-  send(rq, isolate(item))
+template send*[T](rq: InetEventQueue[T], item: T, trigger=true) =
+  send(rq, isolate(item), trigger)
 
-template trySend*[T](rq: InetEventQueue[T], item: var Isolated[T]): bool =
+template trySend*[T](rq: InetEventQueue[T], item: var Isolated[T], trigger=true): bool =
   let res: bool = channels.trySend(rq.chan, item)
-  if res: rq.evt.trigger()
+  if res and trigger: rq.evt.trigger()
   res
 
 proc recv*[T](rq: InetEventQueue[T]): T =

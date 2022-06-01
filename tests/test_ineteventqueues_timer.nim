@@ -24,9 +24,13 @@ proc producerThread(args: ThreadArgs) {.thread.} =
 
     # /* send data to consumers */
     echo "-> Producer: tx_data: putting: ", i, " -> ", repr(txData)
-    args.queue.send(txData)
+    args.queue.send(txData, trigger=false)
+
+    if i mod 4 == 0:
+      args.queue.trigger()
     echo "-> Producer: tx_data: sent: ", i
 
+  args.queue.trigger()
   echo "Done Producer: "
   
 proc consumeQueueEvents(args: ThreadArgs) {.thread.} =
@@ -45,21 +49,19 @@ proc consumeQueueEvents(args: ThreadArgs) {.thread.} =
   var count = 0
 
   loop(selector, -1.Millis, events):
-    echo fmt"consumer: event: {queueHasDataEvent in events =} "
+    echo fmt"<- Consumer: has data event? {queueHasDataEvent in events =} "
     withEvent(events, queueHasDataEvent, asKey=readyKey):
-      echo fmt"got new data! event: {queueHasDataEvent=} with {readyKey=}"
+      echo fmt"<- Consumer: got data event: {queueHasDataEvent=} with {readyKey=}"
 
       var rxData: string
       while queue.tryRecv(rxData):
         inc count
         echo "<- Consumer: rx_data: got: ", count, " <- ", repr(rxData)
     
-    echo fmt"{count=} vs {args.count=}"
     if count >= args.count:
       break
     
   echo "Done Consumer "
-  echo fmt"queue size: {queue.chan.peek()}"
 
 proc consumerThread(args: ThreadArgs) {.thread.} =
   var queue = args.queue
@@ -75,11 +77,11 @@ proc consumerThread(args: ThreadArgs) {.thread.} =
   loop(selector, -1.Millis, events):
     # check specific event
     if defaultTimer in events:
-      echo fmt"default timer triggered! "
+      echo fmt"<- Consumer: default timer triggered! "
     
     # print all events
     for evt, key in events:
-      echo fmt"event occurred: {evt=} with {key=}"
+      echo fmt"<- Consumer: event occurred: {evt=} with {key=}"
     
     
   echo "Done Consumer "

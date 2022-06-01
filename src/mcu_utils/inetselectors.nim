@@ -80,7 +80,7 @@ template loop*(selector: EventSelector, timeout: Millis, events: Table[InetEvent
   while true:
     events.clear()
     let keys: seq[ReadyKey] = selector.raw.select(timeout.int)
-    logDebug "[selector]::", "keys:", repr(keys)
+    # logDebug "[selector]::", "keys:", repr(keys)
     for key in keys:
       if Event.Error in key.events or key.errorCode.int != 0:
         let errItem = InetEvent(kind: Event.Error, errfd: key.fd, errorCode: key.errorCode)
