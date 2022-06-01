@@ -1,5 +1,6 @@
 import std/os
 import std/random
+import std/unittest
 
 import mcu_utils/inetqueues
 
@@ -19,20 +20,7 @@ proc producerThread(args: (InetStrQueue, int, int)) {.thread.} =
 
     # /* send data to consumers */
     echo "-> Producer: tx_data: putting: ", i, " -> ", repr(txData)
-    var res: bool
-    while not res:
-      # this will print txData string
-      echo "txData tosend: ", txData
-      var item = isolate txData
-      echo "txData tosend: ", item, " from: ", txData
-
-      res = myFifo.trySend(item)
-      echo "queue full... trying again."
-      os.sleep(40)
-
-    # this will print empty string
-    echo "txData sent: ", txData
-
+    myFifo.send(txData)
     echo "-> Producer: tx_data: sent: ", i
   echo "Done Producer: "
   
@@ -42,33 +30,43 @@ proc consumerThread(args: (InetStrQueue, int, int)) {.thread.} =
     count = args[1]
     tsrand = args[2]
   echo "\n===== running consumer ===== "
-  var rxData: string
   for i in 0..<count:
     os.sleep(rand(tsrand))
     echo "<- Consumer: rx_data: wait: ", i
-    while not myFifo.tryRecv(rxData):
-      echo "no data... trying again."
-      os.sleep(40)
+    var rxData: string = myFifo.recv()
     echo "<- Consumer: rx_data: got: ", i, " <- ", repr(rxData)
 
-  assert rxData == "txNum1834"
   echo "Done Consumer "
+
+proc runTestsChannel*() =
+  randomize()
+  var myFifo = InetStrQueue.init(10)
+
+
+  producerThread((myFifo, 10, 100))
+  consumerThread((myFifo, 10, 100))
 
 proc runTestsChannelThreaded*(ncnt, tsrand: int) =
   echo "\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< "
   echo "[Channel] Begin "
   randomize()
-  var myFifo = InetStrQueue.init(3)
+  var myFifo = InetStrQueue.init(10)
 
-  var thrp: Thread[(InetStrQueue, int, int)]
-  var thrc: Thread[(InetStrQueue, int, int)]
+  var thrp: Thread[(InetStrQueue , int, int)]
+  var thrc: Thread[(InetStrQueue , int, int)]
 
+  createThread(thrc, consumerThread, (myFifo, ncnt, tsrand))
   # os.sleep(2000)
   createThread(thrp, producerThread, (myFifo, ncnt, tsrand))
-  createThread(thrc, consumerThread, (myFifo, ncnt, 2*tsrand))
   joinThreads(thrp, thrc)
   echo "[Channel] Done joined "
   echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> "
 
-when isMainModule:
-  runTestsChannelThreaded(7, 1200)
+suite "test for InetQueues functionality":
+  echo "suite setup: run once before the tests"
+  
+  test "faster threaded consumer/producer test":
+    runTestsChannelThreaded(100, 120)
+
+  test "slow threaded consumer/producer test":
+    runTestsChannelThreaded(7, 1200)
