@@ -149,12 +149,12 @@ suite "test for InetQueues functionality":
       "City of " & x
     echo fmt"{cityStrings=}"
 
-  # test "queue event testing":
-  #   runTestsThreaded(11, 100, consumeQueueEvents, produceQueueEvents)
+  test "queue event testing":
+    runTestsThreaded(11, 100, consumeQueueEvents, produceQueueEvents)
 
   test "timer event testing":
     echo "starting timer thread tests..."
-    runTestsThreaded(10, 100, produceTimeEvents, consumeTimeEvents, size = 20)
+    runTestsThreaded(20, 100, produceTimeEvents, consumeTimeEvents, size = 20)
 
   # test "slow threaded consumer/producer test":
     # runTestsChannelThreaded(7, 1200)
