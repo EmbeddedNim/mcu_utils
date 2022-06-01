@@ -136,6 +136,7 @@ proc runTestsThreaded*(ncnt, tsrand: int;
   createThread(thrc, consumer, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
   createThread(thrp, producer, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
   joinThreads(thrp, thrc)
+  check myFifo.chan.peek() == 0
   echo "[Channel] Done joined "
   echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> "
 
