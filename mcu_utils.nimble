@@ -11,6 +11,7 @@ srcDir        = "src"
 
 requires "nim >= 1.6.5"
 requires "threading >= 0.1.0"
+requires "patty >= 0.3.4"
 
 
 task build_integration_tests, "build integration test tools":

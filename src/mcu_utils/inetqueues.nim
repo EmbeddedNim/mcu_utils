@@ -4,8 +4,10 @@ import std/selectors
 import threading/smartptrs
 import threading/channels
 
+import basictypes
 import msgbuffer
 import inettypes
+import logging
 
 export isolation
 export msgbuffer, inettypes
@@ -75,6 +77,9 @@ proc init*[T](x: typedesc[InetEventQueue[T]], size: int): InetEventQueue[T] =
 proc init*(x: typedesc[InetMsgQueue], size: int): InetMsgQueue =
   result = newInetEventQueue[InetMsgQueueItem](size)
 
+proc getEvent*[T](q: InetEventQueue[T]): SelectEvent =
+  result = q.evt
+
 proc send*[T](rq: InetEventQueue[T], item: sink Isolated[T]) =
   rq.chan.send(item)
   rq.evt.trigger()
@@ -109,5 +114,3 @@ proc recvMsg*(rq: InetMsgQueue): InetMsgQueueItem =
 
 template tryRecvMsg*(rq: InetEventQueue, item: var InetMsgQueueItem): bool =
   tryRecv(rq, item)
-
-
