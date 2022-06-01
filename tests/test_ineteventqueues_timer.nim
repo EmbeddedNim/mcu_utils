@@ -30,9 +30,13 @@ proc producerThread(args: ThreadArgs) {.thread.} =
   echo "Done Producer: "
   
 proc consumeQueueEvents(args: ThreadArgs) {.thread.} =
-  var queue = args.queue
-
+  ## consumer using manual queue events
+  ## 
+  ## for example if you want to batch multiple items into a queue
+  ## then process them in batches
+  ## 
   echo "\n===== running consumer ===== "
+  var queue = args.queue
   var selector = newEventSelector()
   let queueHasDataEvent = selector.registerQueue(queue)
   echo fmt"{queueHasDataEvent=}"
@@ -41,9 +45,7 @@ proc consumeQueueEvents(args: ThreadArgs) {.thread.} =
   var count = 0
 
   loop(selector, -1.Millis, events):
-    # print all events
     echo fmt"consumer: event: {queueHasDataEvent in events =} "
-
     withEvent(events, queueHasDataEvent, asKey=readyKey):
       echo fmt"got new data! event: {queueHasDataEvent=} with {readyKey=}"
 
