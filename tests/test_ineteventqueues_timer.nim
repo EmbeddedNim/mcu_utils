@@ -86,9 +86,7 @@ proc produceTimeEvents(args: ThreadArgs) {.thread.} =
     var txData = "txNum" & $(1234 + 100 * count)
     echo "-> Producer: tx_data: putting: ", count, " -> ", repr(txData)
     let res = args.queue.trySend(txData, trigger=false)
-    echo fmt"-> Producer: sent: {res=}"
 
-    echo "-> Producer: tx_data: sent: ", count
     if count >= args.count:
       break
 
