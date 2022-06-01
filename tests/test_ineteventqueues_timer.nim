@@ -73,30 +73,24 @@ proc consumeQueueEvents(args: ThreadArgs) {.thread.} =
 
 proc produceTimeEvents(args: ThreadArgs) {.thread.} =
   echo "\n===== running producer ===== "
-  var queue = args.queue
   var selector = newEventSelector()
-  let queueHasDataEvent = selector.registerQueue(queue)
-  echo fmt"{queueHasDataEvent=}"
+  let timer = selector.registerTimer(100, false)
+  echo fmt"{timer=}"
 
   var events: Table[InetEvent, ReadyKey]
   var count = 0
 
   loop(selector, -1.Millis, events):
-    os.sleep(rand(args.tsrand))
-    # /* create data item to send */
     inc count
 
     var txData = "txNum" & $(1234 + 100 * count)
-
-    # /* send data to consumers */
     echo "-> Producer: tx_data: putting: ", count, " -> ", repr(txData)
-    # var data = isolate(txData)
     let res = args.queue.trySend(txData, trigger=false)
     echo fmt"-> Producer: sent: {res=}"
 
-    # if count mod 4 == 0:
-    #   args.queue.trigger()
     echo "-> Producer: tx_data: sent: ", count
+    if count >= args.count:
+      break
 
   # args.queue.trigger()
   echo "Done Producer: "
@@ -110,16 +104,16 @@ proc consumeTimeEvents(args: ThreadArgs) {.thread.} =
   echo "\n===== running consumer ===== "
   var queue = args.queue
   var selector = newEventSelector()
-  let queueHasDataEvent = selector.registerQueue(queue)
-  echo fmt"{queueHasDataEvent=}"
+  let timer = selector.registerTimer(1_000, false)
+  echo fmt"{timer=}"
 
   var events: Table[InetEvent, ReadyKey]
   var count = 0
 
   loop(selector, -1.Millis, events):
-    echo fmt"<- Consumer: has data event? {queueHasDataEvent in events =} "
-    withEvent(events, queueHasDataEvent, asKey=readyKey):
-      echo fmt"<- Consumer: got data event: {queueHasDataEvent=} with {readyKey=}"
+    echo fmt"<- Consumer: has timer event? {timer in events =} "
+    withEvent(events, timer, asKey=readyKey):
+      echo fmt"<- Consumer: got timer event: {timer=} with {readyKey=}"
 
       var rxData: string
       while queue.tryRecv(rxData):
@@ -132,10 +126,12 @@ proc consumeTimeEvents(args: ThreadArgs) {.thread.} =
   echo "Done Consumer "
 
 proc runTestsThreaded*(ncnt, tsrand: int;
-                       consumer, producer: proc (args: ThreadArgs) {.thread.}) =
+                       consumer, producer: proc (args: ThreadArgs) {.thread.},
+                       size = 4,
+                       ) =
   echo "\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< "
   echo "[Channel] Begin "
-  var myFifo = InetEventQueue[string].init(4)
+  var myFifo = InetEventQueue[string].init(size)
   var thrp, thrc: Thread[ThreadArgs]
   createThread(thrc, consumer, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
   createThread(thrp, producer, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
@@ -153,12 +149,12 @@ suite "test for InetQueues functionality":
       "City of " & x
     echo fmt"{cityStrings=}"
 
-  test "queue event testing":
-    runTestsThreaded(11, 100, consumeQueueEvents, produceQueueEvents)
-
+  # test "queue event testing":
+  #   runTestsThreaded(11, 100, consumeQueueEvents, produceQueueEvents)
 
   test "timer event testing":
-    runTestsThreaded(11, 100, produceTimeEvents, consumeTimeEvents)
+    echo "starting timer thread tests..."
+    runTestsThreaded(10, 100, produceTimeEvents, consumeTimeEvents, size = 20)
 
   # test "slow threaded consumer/producer test":
     # runTestsChannelThreaded(7, 1200)
