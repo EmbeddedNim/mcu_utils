@@ -4,8 +4,10 @@ import std/selectors
 import threading/smartptrs
 import threading/channels
 
+import basictypes
 import msgbuffer
 import inettypes
+import logging
 
 export isolation
 export msgbuffer, inettypes
@@ -75,17 +77,29 @@ proc init*[T](x: typedesc[InetEventQueue[T]], size: int): InetEventQueue[T] =
 proc init*(x: typedesc[InetMsgQueue], size: int): InetMsgQueue =
   result = newInetEventQueue[InetMsgQueueItem](size)
 
-proc send*[T](rq: InetEventQueue[T], item: sink Isolated[T]) =
+proc getEvent*[T](q: InetEventQueue[T]): SelectEvent =
+  result = q.evt
+
+proc send*[T](rq: InetEventQueue[T], item: sink Isolated[T], trigger=true) =
   rq.chan.send(item)
+  if trigger:
+    rq.evt.trigger()
+
+proc trigger*[T](rq: InetEventQueue[T]) =
   rq.evt.trigger()
 
-template send*[T](rq: InetEventQueue[T], item: T) =
-  send(rq, isolate(item))
+template send*[T](rq: InetEventQueue[T], item: T, trigger=true) =
+  send(rq, isolate(item), trigger)
 
-template trySend*[T](rq: InetEventQueue[T], item: var Isolated[T]): bool =
+proc trySend*[T](rq: InetEventQueue[T], item: var Isolated[T], trigger=true): bool =
   let res: bool = channels.trySend(rq.chan, item)
-  if res: rq.evt.trigger()
+  if res and trigger:
+    rq.evt.trigger()
   res
+
+template trySend*[T](rq: InetEventQueue[T], item: T, trigger=true): bool =
+  var isoItem = isolate(item)
+  rq.trySend(isoItem, trigger)
 
 proc recv*[T](rq: InetEventQueue[T]): T =
   channels.recv(rq.chan, result)
@@ -109,5 +123,3 @@ proc recvMsg*(rq: InetMsgQueue): InetMsgQueueItem =
 
 template tryRecvMsg*(rq: InetEventQueue, item: var InetMsgQueueItem): bool =
   tryRecv(rq, item)
-
-
