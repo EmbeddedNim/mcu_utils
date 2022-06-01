@@ -31,7 +31,7 @@ proc produceQueueEvents(args: ThreadArgs) {.thread.} =
 
     if i mod 4 == 0:
       args.queue.trigger()
-    echo "-> Producer: tx_data: sent: ", i
+      echo "-> Producer: tx_data: sent: ", i
 
   args.queue.trigger()
   echo "Done Producer: "
