@@ -90,14 +90,15 @@ proc produceTimeEvents(args: ThreadArgs) {.thread.} =
 
     # /* send data to consumers */
     echo "-> Producer: tx_data: putting: ", count, " -> ", repr(txData)
-    var data = isolate(txData)
-    let res = args.queue.trySend(data, trigger=false)
+    # var data = isolate(txData)
+    let res = args.queue.trySend(txData, trigger=false)
+    echo fmt"-> Producer: sent: {res=}"
 
-    if count mod 4 == 0:
-      args.queue.trigger()
+    # if count mod 4 == 0:
+    #   args.queue.trigger()
     echo "-> Producer: tx_data: sent: ", count
 
-  args.queue.trigger()
+  # args.queue.trigger()
   echo "Done Producer: "
   
 proc consumeTimeEvents(args: ThreadArgs) {.thread.} =
@@ -130,7 +131,8 @@ proc consumeTimeEvents(args: ThreadArgs) {.thread.} =
     
   echo "Done Consumer "
 
-proc runTestsThreaded*(ncnt, tsrand: int, consumer, producer: proc (args: ThreadArgs) {.thread.}) =
+proc runTestsThreaded*(ncnt, tsrand: int;
+                       consumer, producer: proc (args: ThreadArgs) {.thread.}) =
   echo "\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< "
   echo "[Channel] Begin "
   var myFifo = InetEventQueue[string].init(4)

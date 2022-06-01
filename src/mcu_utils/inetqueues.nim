@@ -98,7 +98,8 @@ proc trySend*[T](rq: InetEventQueue[T], item: var Isolated[T], trigger=true): bo
   res
 
 template trySend*[T](rq: InetEventQueue[T], item: T, trigger=true): bool =
-  rq.trySend(isolate(item))
+  var isoItem = isolate(item)
+  rq.trySend(isoItem)
 
 proc recv*[T](rq: InetEventQueue[T]): T =
   channels.recv(rq.chan, result)
