@@ -15,7 +15,7 @@ type
 proc timerThread(args: ThreadArgs) {.thread.} =
   discard
 
-proc producerThread(args: ThreadArgs) {.thread.} =
+proc produceQueueEvents(args: ThreadArgs) {.thread.} =
   echo "\n===== running producer ===== "
   for i in 1 .. args.count:
     os.sleep(rand(args.tsrand))
@@ -97,7 +97,7 @@ proc runTestsChannelThreaded*(ncnt, tsrand: int) =
 
   createThread(thrc, consumeQueueEvents, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
   # os.sleep(2000)
-  createThread(thrp, producerThread, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
+  createThread(thrp, produceQueueEvents, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
   joinThreads(thrp, thrc)
   echo "[Channel] Done joined "
   echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> "
