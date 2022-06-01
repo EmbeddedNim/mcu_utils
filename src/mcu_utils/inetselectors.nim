@@ -1,5 +1,4 @@
 import std/selectors
-import patty
 from os import OSErrorCode
 
 import basictypes
@@ -9,7 +8,6 @@ import tables
 
 export basictypes
 export inetqueues
-export patty
 
 ## Selector setup for ease of use with user events and timers
 ## 
