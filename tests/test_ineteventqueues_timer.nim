@@ -13,9 +13,10 @@ type
     tsrand: int
 
 
+## ========================================================= ##
 ## Produce Queue Events
 ## 
-
+## ========================================================= ##
 
 proc produceQueueEvents(args: ThreadArgs) {.thread.} =
   echo "\n===== running producer ===== "
@@ -65,23 +66,36 @@ proc consumeQueueEvents(args: ThreadArgs) {.thread.} =
     
   echo "Done Consumer "
 
+## ========================================================= ##
 ## Produce Queue Events
 ## 
+## ========================================================= ##
 
 proc produceTimeEvents(args: ThreadArgs) {.thread.} =
   echo "\n===== running producer ===== "
-  for i in 1 .. args.count:
+  var queue = args.queue
+  var selector = newEventSelector()
+  let queueHasDataEvent = selector.registerQueue(queue)
+  echo fmt"{queueHasDataEvent=}"
+
+  var events: Table[InetEvent, ReadyKey]
+  var count = 0
+
+  loop(selector, -1.Millis, events):
     os.sleep(rand(args.tsrand))
     # /* create data item to send */
-    var txData = "txNum" & $(1234 + 100 * i)
+    inc count
+
+    var txData = "txNum" & $(1234 + 100 * count)
 
     # /* send data to consumers */
-    echo "-> Producer: tx_data: putting: ", i, " -> ", repr(txData)
-    args.queue.send(txData, trigger=false)
+    echo "-> Producer: tx_data: putting: ", count, " -> ", repr(txData)
+    var data = isolate(txData)
+    let res = args.queue.trySend(data, trigger=false)
 
-    if i mod 4 == 0:
+    if count mod 4 == 0:
       args.queue.trigger()
-    echo "-> Producer: tx_data: sent: ", i
+    echo "-> Producer: tx_data: sent: ", count
 
   args.queue.trigger()
   echo "Done Producer: "
@@ -146,8 +160,8 @@ suite "test for InetQueues functionality":
     echo "[Channel] Begin "
     var myFifo = InetEventQueue[string].init(4)
     var thrp, thrc: Thread[ThreadArgs]
-    createThread(thrc, consumeQueueEvents, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
-    createThread(thrp, produceQueueEvents, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
+    createThread(thrc, produceTimeEvents, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
+    createThread(thrp, consumeTimeEvents, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
     joinThreads(thrp, thrc)
     echo "[Channel] Done joined "
     echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> "

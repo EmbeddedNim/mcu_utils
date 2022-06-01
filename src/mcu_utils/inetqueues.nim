@@ -85,7 +85,7 @@ proc send*[T](rq: InetEventQueue[T], item: sink Isolated[T], trigger=true) =
   if trigger:
     rq.evt.trigger()
 
-template trigger*[T](rq: InetEventQueue[T]) =
+proc trigger*[T](rq: InetEventQueue[T]) =
   rq.evt.trigger()
 
 template send*[T](rq: InetEventQueue[T], item: T, trigger=true) =
@@ -93,8 +93,12 @@ template send*[T](rq: InetEventQueue[T], item: T, trigger=true) =
 
 template trySend*[T](rq: InetEventQueue[T], item: var Isolated[T], trigger=true): bool =
   let res: bool = channels.trySend(rq.chan, item)
-  if res and trigger: rq.evt.trigger()
+  if res and trigger:
+    rq.evt.trigger()
   res
+
+template trySend*[T](rq: InetEventQueue[T], item: T, trigger=true): bool =
+  rq.trySend(isolate(item))
 
 proc recv*[T](rq: InetEventQueue[T]): T =
   channels.recv(rq.chan, result)
