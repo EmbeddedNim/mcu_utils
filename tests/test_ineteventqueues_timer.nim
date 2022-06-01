@@ -130,13 +130,20 @@ proc consumeTimeEvents(args: ThreadArgs) {.thread.} =
     
   echo "Done Consumer "
 
-proc runTestsChannelThreaded*(ncnt, tsrand: int) =
+proc runTestsThreaded*(ncnt, tsrand: int, consumer, producer: proc (args: ThreadArgs) {.thread.}) =
+  echo "\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< "
+  echo "[Channel] Begin "
+  var myFifo = InetEventQueue[string].init(4)
+  var thrp, thrc: Thread[ThreadArgs]
+  createThread(thrc, consumer, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
+  createThread(thrp, producer, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
+  joinThreads(thrp, thrc)
+  echo "[Channel] Done joined "
+  echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> "
 
 suite "test for InetQueues functionality":
   echo "suite setup: run once before the tests"
-  
-  setup:
-    randomize()
+  randomize()
 
   test "timer":
     var cities = @["Cleveland", "Portland"]
@@ -145,26 +152,11 @@ suite "test for InetQueues functionality":
     echo fmt"{cityStrings=}"
 
   test "queue event testing":
-    echo "\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< "
-    echo "[Channel] Begin "
-    var myFifo = InetEventQueue[string].init(4)
-    var thrp, thrc: Thread[ThreadArgs]
-    createThread(thrc, consumeQueueEvents, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
-    createThread(thrp, produceQueueEvents, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
-    joinThreads(thrp, thrc)
-    echo "[Channel] Done joined "
-    echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> "
+    runTestsThreaded(11, 100, consumeQueueEvents, produceQueueEvents)
+
 
   test "timer event testing":
-    echo "\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< "
-    echo "[Channel] Begin "
-    var myFifo = InetEventQueue[string].init(4)
-    var thrp, thrc: Thread[ThreadArgs]
-    createThread(thrc, produceTimeEvents, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
-    createThread(thrp, consumeTimeEvents, ThreadArgs(queue: myFifo, count: ncnt, tsrand: tsrand))
-    joinThreads(thrp, thrc)
-    echo "[Channel] Done joined "
-    echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> "
+    runTestsThreaded(11, 100, produceTimeEvents, consumeTimeEvents)
 
   # test "slow threaded consumer/producer test":
     # runTestsChannelThreaded(7, 1200)
