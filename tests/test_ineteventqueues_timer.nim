@@ -11,6 +11,7 @@ type
     queue: InetEventQueue[string]
     count: int
     tsrand: int
+    timerfd: int
 
 
 ## ========================================================= ##
@@ -138,6 +139,77 @@ proc runTestsThreaded*(ncnt, tsrand: int;
   echo "[Channel] Done joined "
   echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> "
 
+## ========================================================= ##
+## Timer-based Queue Events
+## 
+## ========================================================= ##
+
+type
+  ListenerThreadArgs = object
+    evt*: SelectEvent # eventfds
+    id: int
+    count: int
+    tsrand: int
+    timerfd: int
+
+proc echoListener(args: ListenerThreadArgs) {.thread.} =
+  var selector = newEventSelector()
+  selector.registerEvent(args.evt)
+
+  var events: Table[InetEvent, ReadyKey]
+  var count = 0
+
+  echo "[Listener] begin"
+  loop(selector, -1.Millis, events):
+    inc count
+    echo fmt"<- Listener[{args.id}] got events: {events=}" 
+
+    if count > args.count:
+      break
+  
+  # args.queue.trigger()
+  echo "Done Producer: "
+  
+proc listenerTimeEvents(args: ListenerThreadArgs) {.thread.} =
+  echo "\n===== running timer ===== "
+  var selector = newEventSelector()
+  let timer = selector.registerTimer(400, false)
+  echo fmt"{timer=}"
+
+  var events: Table[InetEvent, ReadyKey]
+  var count = 0
+
+  loop(selector, -1.Millis, events):
+    inc count
+
+    echo ""
+    echo fmt"-> Timer Event[{args.id}] trigger event from timer: {events=}" 
+    args.evt.trigger()
+
+    if count > 2*args.count:
+      break
+
+  # args.queue.trigger()
+  echo "Done Producer: "
+  
+
+proc runTestsListener*(ncnt, tsrand: int; size = 4,) =
+  echo "\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< "
+  echo "[Channel] Begin "
+  var myFifo = InetEventQueue[string].init(size)
+  var thrp: array[4, Thread[ListenerThreadArgs]]
+
+  let evt = newSelectEvent()
+  thrp[0].createThread(listenerTimeEvents, ListenerThreadArgs(evt: evt, id: 0, count: ncnt, tsrand: tsrand))
+  for i in 1 ..< thrp.len():
+    thrp[i].createThread(echoListener, ListenerThreadArgs(evt: evt, id: i, count: ncnt, tsrand: tsrand))
+
+  joinThreads(thrp)
+  check myFifo.chan.peek() == 0
+  echo "[Channel] Done joined "
+  echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> "
+
+
 suite "test for InetQueues functionality":
   echo "suite setup: run once before the tests"
   randomize()
@@ -155,5 +227,9 @@ suite "test for InetQueues functionality":
     echo "starting timer thread tests..."
     runTestsThreaded(20, 100, produceTimeEvents, consumeTimeEvents, size = 20)
 
-  # test "slow threaded consumer/producer test":
-    # runTestsChannelThreaded(7, 1200)
+  test "timer event testing":
+    echo "starting multi-listener event tests..."
+    # IMPORTANT: not all threads will receive the eventfd event / semaphore value 
+    # this is true at least on Linux, and likely Zephyr
+    runTestsListener(20, 100, size = 20)
+
