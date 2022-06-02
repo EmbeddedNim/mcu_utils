@@ -1,3 +1,4 @@
+import std/json
 import basictypes
 export basictypes
 
@@ -14,6 +15,10 @@ type
     ## actuation use, when the desired change should happen in the future,
     ## but the sender or the receiver does not have accurate time available.
 
+
+proc `+`*(a, b: TimeSML): TimeSML {.borrow.}
+proc `-`*(a, b: TimeSML): TimeSML {.borrow.}
+proc `%`*(a: TimeSML): JsonNode {.borrow.}
 
 when defined(zephyr):
   import nephyr/times
