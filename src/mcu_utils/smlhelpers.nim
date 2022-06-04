@@ -153,16 +153,16 @@ when isMainModule:
     var ss = MsgBuffer.init()
     logAllocStats(lvlInfo):
       let ts = currTimeSenML()
-      var smls = newSeqOfCap[SmlReading](2*batch.len())
-      smls.add SmlReading(kind: BaseNT, name: MacAddressStr, ts: ts)
+      var smls = newSeqOfCap[SmlReadingI](2*batch.len())
+      smls.add SmlReadingI(kind: BaseNT, name: MacAddressStr, ts: ts)
       for reading in batch:
         for i in 0..<reading.sample_count:
           let tsr = ts - reading.ts
           let vs = reading.samples[i].float32 / 10.0 + 3.3
           let cs = reading.samples[i].float32 / 14.0 + 1.0
           echo fmt"{vs=} {cs=}"
-          smls.add SmlReading(kind: Normal, name: fmt"ch{i}.v", unit: "V", ts: tsr, value: vs)
-          smls.add SmlReading(kind: Normal, name: fmt"ch{i}.a", unit: "A", ts: tsr, value: cs)
+          smls.add SmlReadingI(kind: Normal, name: fmt"ch{i}.v", unit: "V", ts: tsr, value: vs)
+          smls.add SmlReadingI(kind: Normal, name: fmt"ch{i}.a", unit: "A", ts: tsr, value: cs)
 
       ss.pack(smls)
 
