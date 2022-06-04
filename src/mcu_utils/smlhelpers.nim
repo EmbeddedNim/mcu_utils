@@ -50,7 +50,7 @@ type
 
 ## =========  Basic SmlMeasurement ========= ##
 type
-  SmlReadingKind* = enum Normal, BaseNT
+  SmlReadingKind* = enum NormalNTVU, NormalNVU, BaseNT
 
   SmlReading* = object
     kind*: SmlReadingKind
@@ -61,12 +61,20 @@ type
   
 proc pack_type*[ByteStream](s: ByteStream, x: SmlReading) =
   case x.kind:
-  of Normal:
+  of NormalNTVU:
     s.pack_map(4)
     s.pack("n")
     s.pack(x.name)
     s.pack("t")
     s.pack(x.ts.float64) # let the compiler decide
+    s.pack("v")
+    s.pack(x.value) # let the compiler decide
+    s.pack("u")
+    s.pack(x.unit) # let the compiler decide
+  of NormalNVU:
+    s.pack_map(3)
+    s.pack("n")
+    s.pack(x.name)
     s.pack("v")
     s.pack(x.value) # let the compiler decide
     s.pack("u")
@@ -82,18 +90,26 @@ type
   SmlReadingI* = object
     kind*: SmlReadingKind
     name*: string
-    unit*: string
+    unit*: char
     ts*: TimeSML
     value*: float
   
 proc pack_type*[ByteStream](s: ByteStream, x: SmlReadingI) =
   case x.kind:
-  of Normal:
+  of NormalNTVU:
     s.pack_map(4)
     s.pack(SmlFields.n)
     s.pack(x.name)
     s.pack(SmlFields.t)
     s.pack(x.ts.float64) # let the compiler decide
+    s.pack(SmlFields.v)
+    s.pack(x.value) # let the compiler decide
+    s.pack(SmlFields.u)
+    s.pack(x.unit) # let the compiler decide
+  of NormalNVU:
+    s.pack_map(3)
+    s.pack(SmlFields.n)
+    s.pack(x.name)
     s.pack(SmlFields.v)
     s.pack(x.value) # let the compiler decide
     s.pack(SmlFields.u)
@@ -133,9 +149,8 @@ when isMainModule:
           let tsr = ts - reading.ts
           let vs = reading.samples[i].float32 / 10.0 + 3.3
           let cs = reading.samples[i].float32 / 14.0 + 1.0
-          echo fmt"{vs=} {cs=}"
-          smls.add SmlReading(kind: Normal, name: fmt"ch{i}.v", unit: "V", ts: tsr, value: vs)
-          smls.add SmlReading(kind: Normal, name: fmt"ch{i}.c", unit: "A", ts: tsr, value: cs)
+          smls.add SmlReading(kind: NormalNVU, name: fmt"ch{i}.v", unit: "V", ts: tsr, value: vs)
+          smls.add SmlReading(kind: NormalNVU, name: fmt"ch{i}.c", unit: "A", ts: tsr, value: cs)
 
       ss.pack(smls)
 
@@ -161,9 +176,8 @@ when isMainModule:
           let tsr = ts - reading.ts
           let vs = reading.samples[i].float32 / 10.0 + 3.3
           let cs = reading.samples[i].float32 / 14.0 + 1.0
-          echo fmt"{vs=} {cs=}"
-          smls.add SmlReadingI(kind: Normal, name: fmt"ch{i}.v", unit: "V", ts: tsr, value: vs)
-          smls.add SmlReadingI(kind: Normal, name: fmt"ch{i}.c", unit: "A", ts: tsr, value: cs)
+          smls.add SmlReadingI(kind: NormalNVU, name: fmt"ch{i}.v", unit: 'V', ts: tsr, value: vs)
+          smls.add SmlReadingI(kind: NormalNVU, name: fmt"ch{i}.c", unit: 'A', ts: tsr, value: cs)
 
       ss.pack(smls)
 
