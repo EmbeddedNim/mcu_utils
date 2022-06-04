@@ -4,6 +4,7 @@ import std/json
 
 import msgpack4nim
 import msgpack4nim/msgpack2json
+import msgpack4nim/msgpack2any
 
 import stew/byteutils
 import logging, timeutils, msgbuffer, allocstats
@@ -134,7 +135,7 @@ when isMainModule:
           let cs = reading.samples[i].float32 / 14.0 + 1.0
           echo fmt"{vs=} {cs=}"
           smls.add SmlReading(kind: Normal, name: fmt"ch{i}.v", unit: "V", ts: tsr, value: vs)
-          smls.add SmlReading(kind: Normal, name: fmt"ch{i}.a", unit: "A", ts: tsr, value: cs)
+          smls.add SmlReading(kind: Normal, name: fmt"ch{i}.c", unit: "A", ts: tsr, value: cs)
 
       ss.pack(smls)
 
@@ -162,12 +163,12 @@ when isMainModule:
           let cs = reading.samples[i].float32 / 14.0 + 1.0
           echo fmt"{vs=} {cs=}"
           smls.add SmlReadingI(kind: Normal, name: fmt"ch{i}.v", unit: "V", ts: tsr, value: vs)
-          smls.add SmlReadingI(kind: Normal, name: fmt"ch{i}.a", unit: "A", ts: tsr, value: cs)
+          smls.add SmlReadingI(kind: Normal, name: fmt"ch{i}.c", unit: "A", ts: tsr, value: cs)
 
       ss.pack(smls)
 
     echo fmt"msgbuffer serialized: bytes({ss.data.len()}): {ss.data.toHex()}"
-    echo "msgbuffer de-serialized: ", ss.data.toJsonNode().pretty()
+    echo "msgbuffer de-serialized: ", ss.data.toAny().pretty()
 
   proc testSmlGenOld() =
     var batch = newSeq[AdcReading](1)
@@ -177,10 +178,6 @@ when isMainModule:
       batch[i].sample_count = 6
       for j in 0..<batch[i].sample_count:
         batch[i].samples[j] = rand(1000).int32
-
-    echo "testing sml pack"
-    echo fmt"{voltageNames=}"
-    echo fmt"{currentNames=}"
 
     var ss = MsgBuffer.init()
     logAllocStats(lvlInfo):
@@ -197,14 +194,17 @@ when isMainModule:
           let tsr = ts - reading.ts
           let vs = reading.samples[i].float32 / 10.0 + 3.3
           let cs = reading.samples[i].float32 / 14.0 + 1.0
-          res.add(%* {"n": fmt"ch{i}.voltage", "u": "V", "t": tsr, "v": vs})
-          res.add(%* {"n": fmt"ch{i}.current", "u": "A", "t": tsr, "v": cs})
+          res.add(%* {"n": fmt"ch{i}.v", "u": "V", "t": tsr, "v": vs})
+          res.add(%* {"n": fmt"ch{i}.c", "u": "A", "t": tsr, "v": cs})
 
       ss.fromJsonNode(res)
 
     echo fmt"msgbuffer serialized: bytes({ss.data.len()}): {ss.data.toHex()}"
     echo "msgbuffer de-serialized: ", ss.data.toJsonNode().pretty()
 
+  echo "## ======================= testSmlGen ======================= ## "
   testSmlGen()
+  echo "## ======================= testSmlGenI ====================== ## "
   testSmlGenI()
+  echo "## ======================= testSmlGenOld ==================== ## "
   testSmlGenOld()
