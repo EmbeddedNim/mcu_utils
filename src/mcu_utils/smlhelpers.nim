@@ -87,13 +87,20 @@ proc pack_type*[ByteStream](s: ByteStream, x: SmlReading) =
     s.pack(x.ts.float64) # let the compiler decide
 
 type
+  SmlString* = object
+    data*: array[18, char]
+    count*: int8
   SmlReadingI* = object
     kind*: SmlReadingKind
-    name*: string
+    name*: SmlString
     unit*: char
     ts*: TimeSML
     value*: float
   
+proc pack_type*[ByteStream](s: ByteStream, x: SmlString) =
+    assert x.count <= x.data.len()
+    s.pack_string(x.count)
+    s.write(x.data, x.count)
 proc pack_type*[ByteStream](s: ByteStream, x: SmlReadingI) =
   case x.kind:
   of NormalNTVU:
@@ -170,14 +177,24 @@ when isMainModule:
     logAllocStats(lvlInfo):
       let ts = currTimeSenML()
       var smls = newSeqOfCap[SmlReadingI](2*batch.len())
-      smls.add SmlReadingI(kind: BaseNT, name: MacAddressStr, ts: ts)
+      var bn: SmlString
+      bn.data[0..<len(MacAddressStr)] = MacAddressStr[0..<len(MacAddressStr)]
+      bn.count = len(MacAddressStr).int8
+      smls.add SmlReadingI(kind: BaseNT, name: bn, ts: ts)
+      var vName: SmlString
+      var cName: SmlString
+      cName.data[0..3] = ['c', '0', '.', 'v']
+      cName.count = 4
+      vName.data[0..3] = ['c', '0', '.', 'v']
+      cName.count = 4
+
       for reading in batch:
         for i in 0..<reading.sample_count:
           let tsr = ts - reading.ts
           let vs = reading.samples[i].float32 / 10.0 + 3.3
           let cs = reading.samples[i].float32 / 14.0 + 1.0
-          smls.add SmlReadingI(kind: NormalNVU, name: fmt"ch{i}.v", unit: 'V', ts: tsr, value: vs)
-          smls.add SmlReadingI(kind: NormalNVU, name: fmt"ch{i}.c", unit: 'A', ts: tsr, value: cs)
+          smls.add SmlReadingI(kind: NormalNVU, name: vName, unit: 'V', ts: tsr, value: vs)
+          smls.add SmlReadingI(kind: NormalNVU, name: cName, unit: 'A', ts: tsr, value: cs)
 
       ss.pack(smls)
 
