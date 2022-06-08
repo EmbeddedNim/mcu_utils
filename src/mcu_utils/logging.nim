@@ -38,14 +38,14 @@ type
     ## a global filter that applies to all log messages, and it can be changed
     ## using the `setLogFilter proc<#setLogFilter,Level>`_.
     lvlAll,     ## All levels active
-    lvlNone,    ## No levels active; nothing is logged
+    lvlExtraDebug,   ## Debug level and above are active
     lvlDebug,   ## Debug level and above are active
     lvlInfo,    ## Info level and above are active
     lvlNotice,  ## Notice level and above are active
     lvlWarn,    ## Warn level and above are active
     lvlError,   ## Error level and above are active
-    lvlFatal    ## Fatal level and above are active
-
+    lvlFatal,    ## Fatal level and above are active
+    lvlNone    ## No levels active; nothing is logged
 
 
 const
@@ -74,7 +74,7 @@ macro logImpl(level: static[Level]; msg: string, args: varargs[string, `$`]): un
   let li = args.lineInfoObj()
   var (dir, name, ext) = li.filename.splitFile()
   let modLvl = McuUtilsModuleLevels.getOrDefault(name, lvlNone).ord()
-  if lvl >= ord(McuUtilsLevel) or modLvl >= ord(McuUtilsLevel):
+  if lvl >= ord(McuUtilsLevel) or lvl >= ord(modLvl):
     for i in countdown(args.len(), 0, 1):
       args.insert(i, newStrLitNode(" "))
     args.insert(0, msg)
@@ -92,6 +92,7 @@ template logRunExtra*(level: static[Level], code, normal: untyped): untyped =
   else:
     normal
 
+template logExtraDebug*(msg: string, args: varargs[string, `$`]) = logImpl(lvlExtraDebug, msg, args) 
 template logDebug*(msg: string, args: varargs[string, `$`]) = logImpl(lvlDebug, msg, args) 
 template logError*(msg: string, args: varargs[string, `$`]) = logImpl(lvlError, msg, args) 
 template logFatal*(msg: string, args: varargs[string, `$`]) = logImpl(lvlFatal, msg, args) 
