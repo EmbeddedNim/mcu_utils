@@ -97,9 +97,12 @@ type
     ts*: TimeSML
     value*: float
   
+
 proc pack_type*[ByteStream](s: ByteStream, x: SmlString) =
     assert x.count <= x.data.len()
     s.pack_string(x.count)
+    echo "x.count: ", x.count.repr
+    echo "x.data: ", x.data.repr
     s.write(x.data, x.count)
 proc pack_type*[ByteStream](s: ByteStream, x: SmlReadingI) =
   case x.kind:
