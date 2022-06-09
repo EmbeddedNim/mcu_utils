@@ -93,7 +93,7 @@ type
   SmlReadingI* = object
     kind*: SmlReadingKind
     name*: SmlString
-    unit*: char
+    unit*: SmlString
     ts*: TimeSML
     value*: float
   
