@@ -35,6 +35,10 @@ else:
   proc micros*(): Micros = 
     let ts = getMonoTime()
     result = Micros(convert(Nanoseconds, Microseconds, ts.ticks))
+  proc setTime*(ts: var Micros) = 
+    ts = micros()
+  proc setTime*(ts: var Millis) = 
+    ts = millis()
 
 proc currTimeSenML*(): TimeSML =
   let mt = getMonoTime()
