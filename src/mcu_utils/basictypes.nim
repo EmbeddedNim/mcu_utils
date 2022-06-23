@@ -11,6 +11,9 @@ type
   Volts* = distinct float
   Amps* = distinct float
 
+proc `~=` *[T: float32](x, y: T, eps = 1.0e-6): bool = abs(x-y) < eps
+proc `~=` *[T: float64](x, y: T, eps = 1.0e-6): bool = abs(x-y) < eps
+
 template basicMathBorrows(T: untyped) =
   proc `+` *(x, y: T): T {.borrow.}
   proc `-` *(x, y: T): T {.borrow.}
@@ -26,8 +29,7 @@ template divMathBorrows(T: untyped) =
 template fdivMathBorrows(T: untyped) =
   proc `/` *(x, y: T): T {.borrow.}
   proc `/=` *(x: var T, y: T) {.borrow.}
-  proc `~=` *[T: float32](x, y: T, eps = 1.0e-6): bool = abs(x.float32-y.float32) < eps
-  proc `~=` *[T: float64](x, y: T, eps = 1.0e-6): bool = abs(x.float64-y.float64) < eps
+  proc `~=` *(x, y: T, eps = 1.0e-6): bool {.borrow.}
 
 basicMathBorrows(Millis)
 divMathBorrows(Millis)
@@ -42,9 +44,9 @@ proc repr*(ts: Micros): string =
 basicMathBorrows(Volts)
 fdivMathBorrows(Volts)
 proc repr*(ts: Volts): string =
-  return $(ts.float32) & "'v "
+  return $(ts.float32) & "'V "
 
 basicMathBorrows(Amps)
 fdivMathBorrows(Amps)
 proc repr*(ts: Amps): string =
-  return $(ts.float32) & "'a "
+  return $(ts.float32) & "'A "
