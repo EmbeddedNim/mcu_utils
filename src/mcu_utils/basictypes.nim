@@ -8,6 +8,11 @@ type
   Millis* = distinct int64
   Micros* = distinct int64
 
+  Bits32* = distinct int32
+  Bytes32* = distinct int32
+  Bits64* = distinct int64
+  Bytes64* = distinct int64
+
   Volts* = distinct float
   Amps* = distinct float
 
@@ -40,6 +45,26 @@ basicMathBorrows(Micros)
 divMathBorrows(Micros)
 proc repr*(ts: Micros): string =
   return $(ts.int) & "'us "
+
+basicMathBorrows(Bits32)
+divMathBorrows(Bits32)
+proc repr*(ts: Bits32): string =
+  return $(ts.int32) & "'Bt32 "
+
+basicMathBorrows(Bits64)
+divMathBorrows(Bits64)
+proc repr*(ts: Bits64): string =
+  return $(ts.int64) & "'Bt64 "
+
+basicMathBorrows(Bytes32)
+divMathBorrows(Bytes32)
+proc repr*(ts: Bytes32): string =
+  return $(ts.int32) & "'By32 "
+
+basicMathBorrows(Bytes64)
+divMathBorrows(Bytes64)
+proc repr*(ts: Bytes64): string =
+  return $(ts.int64) & "'By64 "
 
 basicMathBorrows(Volts)
 fdivMathBorrows(Volts)
