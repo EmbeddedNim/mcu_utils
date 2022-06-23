@@ -26,6 +26,8 @@ template divMathBorrows(T: untyped) =
 template fdivMathBorrows(T: untyped) =
   proc `/` *(x, y: T): T {.borrow.}
   proc `/=` *(x: var T, y: T) {.borrow.}
+  proc `~=` *[T: float32](x, y: T, eps = 1.0e-6): bool = abs(x.float32-y.float32) < eps
+  proc `~=` *[T: float64](x, y: T, eps = 1.0e-6): bool = abs(x.float64-y.float64) < eps
 
 basicMathBorrows(Millis)
 divMathBorrows(Millis)
