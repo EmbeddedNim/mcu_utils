@@ -17,11 +17,15 @@ template basicMathBorrows(T: untyped) =
   proc `<` *(x, y: T): bool {.borrow.}
   proc `<=` *(x, y: T): bool {.borrow.}
   proc `==` *(x, y: T): bool {.borrow.}
+  proc `+=` *(x: var T, y: T) {.borrow.}
+  proc `-=` *(x: var T, y: T) {.borrow.}
   proc `hash` *(x: T): Hash {.borrow.}
 template divMathBorrows(T: untyped) =
+  proc `mod` *(x, y: T): T {.borrow.}
   proc `div` *(x, y: T): T {.borrow.}
 template fdivMathBorrows(T: untyped) =
   proc `/` *(x, y: T): T {.borrow.}
+  proc `/=` *(x: var T, y: T) {.borrow.}
 
 basicMathBorrows(Millis)
 divMathBorrows(Millis)
