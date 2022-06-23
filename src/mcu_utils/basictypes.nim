@@ -8,6 +8,9 @@ type
   Millis* = distinct int64
   Micros* = distinct int64
 
+  Volts* = distinct float
+  Amps* = distinct float
+
 template basicMathBorrows(T: untyped) =
   proc `+` *(x, y: T): T {.borrow.}
   proc `-` *(x, y: T): T {.borrow.}
@@ -15,11 +18,27 @@ template basicMathBorrows(T: untyped) =
   proc `<=` *(x, y: T): bool {.borrow.}
   proc `==` *(x, y: T): bool {.borrow.}
   proc `hash` *(x: T): Hash {.borrow.}
+template divMathBorrows(T: untyped) =
+  proc `div` *(x, y: T): T {.borrow.}
+template fdivMathBorrows(T: untyped) =
+  proc `/` *(x, y: T): T {.borrow.}
 
 basicMathBorrows(Millis)
-basicMathBorrows(Micros)
-
-proc repr*(ts: Micros): string =
-  return $(ts.int) & "'us "
+divMathBorrows(Millis)
 proc repr*(ts: Millis): string =
   return $(ts.int) & "'ms "
+
+basicMathBorrows(Micros)
+divMathBorrows(Micros)
+proc repr*(ts: Micros): string =
+  return $(ts.int) & "'us "
+
+basicMathBorrows(Volts)
+fdivMathBorrows(Volts)
+proc repr*(ts: Volts): string =
+  return $(ts.float32) & "'v "
+
+basicMathBorrows(Amps)
+fdivMathBorrows(Amps)
+proc repr*(ts: Amps): string =
+  return $(ts.float32) & "'a "
