@@ -49,8 +49,8 @@ type
 
 
 const
-  McuUtilsLoggingLevel* {.strdefine.} = "lvlAll"
-  McuUtilsLoggingModuleLevels* {.strdefine.} = "exampleMcuUtilModule=lvlAll"
+  McuUtilsLoggingLevel* {.strdefine.} = "lvlInfo"
+  McuUtilsLoggingModuleLevels* {.strdefine.} = "exampleMcuUtilModule=lvlInfo"
 
 var McuUtilsLevel {.compileTime.} = parseEnum[Level](McuUtilsLoggingLevel)
 
