@@ -113,5 +113,5 @@ proc repr*(ts: Volts64): string =
 
 basicMathBorrows(Amps64)
 fdivMathBorrows(Amps64)
-proc repr*(ts: Amps): string =
+proc repr*(ts: Amps64): string =
   return $(ts.float32) & "'A "
