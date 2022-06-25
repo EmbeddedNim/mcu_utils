@@ -77,3 +77,13 @@ basicMathBorrows(Amps)
 fdivMathBorrows(Amps)
 proc repr*(ts: Amps): string =
   return $(ts.float32) & "'A "
+
+basicMathBorrows(Volts64)
+fdivMathBorrows(Volts64)
+proc repr*(ts: Volts64): string =
+  return $(ts.float32) & "'V "
+
+basicMathBorrows(Amps64)
+fdivMathBorrows(Amps64)
+proc repr*(ts: Amps): string =
+  return $(ts.float32) & "'A "
