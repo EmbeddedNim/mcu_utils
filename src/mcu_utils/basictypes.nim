@@ -8,10 +8,17 @@ type
   Millis* = distinct int64
   Micros* = distinct int64
 
+  Bits8* = distinct int8
+  Bits16* = distinct int16
+  Bits24* = distinct int32
   Bits32* = distinct int32
-  Bytes32* = distinct int32
   Bits64* = distinct int64
-  Bytes64* = distinct int64
+
+  UBits8* = distinct uint8
+  UBits16* = distinct uint16
+  UBits24* = distinct uint32
+  UBits32* = distinct uint32
+  UBits64* = distinct uint64
 
   Volts* = distinct float32
   Amps* = distinct float32
@@ -48,6 +55,16 @@ divMathBorrows(Micros)
 proc repr*(ts: Micros): string =
   return $(ts.int) & "'us "
 
+basicMathBorrows(Bits16)
+divMathBorrows(Bits16)
+proc repr*(ts: Bits16): string =
+  return $(ts.int16) & "'Bt16 "
+
+basicMathBorrows(Bits24)
+divMathBorrows(Bits24)
+proc repr*(ts: Bits24): string =
+  return $(ts.int32) & "'Bt24 "
+
 basicMathBorrows(Bits32)
 divMathBorrows(Bits32)
 proc repr*(ts: Bits32): string =
@@ -58,15 +75,26 @@ divMathBorrows(Bits64)
 proc repr*(ts: Bits64): string =
   return $(ts.int64) & "'Bt64 "
 
-basicMathBorrows(Bytes32)
-divMathBorrows(Bytes32)
-proc repr*(ts: Bytes32): string =
-  return $(ts.int32) & "'By32 "
+basicMathBorrows(UBits16)
+divMathBorrows(UBits16)
+proc repr*(ts: UBits16): string =
+  return $(ts.uint16) & "'UBt16 "
 
-basicMathBorrows(Bytes64)
-divMathBorrows(Bytes64)
-proc repr*(ts: Bytes64): string =
-  return $(ts.int64) & "'By64 "
+basicMathBorrows(UBits24)
+divMathBorrows(UBits24)
+proc repr*(ts: UBits24): string =
+  return $(ts.uint32) & "'UBt24 "
+
+basicMathBorrows(UBits32)
+divMathBorrows(UBits32)
+proc repr*(ts: UBits32): string =
+  return $(ts.uint32) & "'UBt32 "
+
+basicMathBorrows(UBits64)
+divMathBorrows(UBits64)
+proc repr*(ts: UBits64): string =
+  return $(ts.uint64) & "'UBt64 "
+
 
 basicMathBorrows(Volts)
 fdivMathBorrows(Volts)
