@@ -13,8 +13,10 @@ type
   Bits64* = distinct int64
   Bytes64* = distinct int64
 
-  Volts* = distinct float
-  Amps* = distinct float
+  Volts* = distinct float32
+  Amps* = distinct float32
+  Volts64* = distinct float64
+  Amps64* = distinct float64
 
 proc `~=` *[T: float32](x, y: T, eps = 1.0e-6): bool = abs(x-y) < eps
 proc `~=` *[T: float64](x, y: T, eps = 1.0e-6): bool = abs(x-y) < eps
