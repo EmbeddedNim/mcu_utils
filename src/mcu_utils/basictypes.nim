@@ -28,6 +28,15 @@ type
 proc `~=` *[T: float32](x, y: T, eps = 1.0e-6): bool = abs(x-y) < eps
 proc `~=` *[T: float64](x, y: T, eps = 1.0e-6): bool = abs(x-y) < eps
 
+proc `setSigned=`*[T: SomeInteger](x: var Bits16, val: T) = 
+  x = Bits16( (int16(val) shl 16) shr 16)
+proc `setSigned=`*[T: SomeInteger](x: var Bits24, val: T) = 
+  x = Bits24( (int32(val) shl 8) shr 8)
+proc `setSigned=`*[T: SomeInteger](x: var Bits32, val: T) = 
+  x = Bits32( (int32(val) shl 8) shr 8)
+proc `setSigned=`*[T: SomeInteger](x: var Bits64, val: T) = 
+  x = Bits64( (int64(val) shl 8) shr 8)
+
 template basicMathBorrows(T: untyped) =
   proc `+` *(x, y: T): T {.borrow.}
   proc `-` *(x, y: T): T {.borrow.}
