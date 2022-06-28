@@ -25,7 +25,7 @@ type
   Volts64* = distinct float64
   Amps64* = distinct float64
 
-# import ryu/ryu_single_all
+import ryu/ryu_single_all
 
 proc toString*[F](v: F): string =
   result = f2s(v.float32)
