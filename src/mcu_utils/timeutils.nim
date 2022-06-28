@@ -42,11 +42,6 @@ proc setTime*(ts: var Micros) =
 proc setTime*(ts: var Millis) = 
   ts = millis()
 
-proc currTimeSenML*(): TimeSML =
-  let mt = getMonoTime()
-  var micros = 1.0e-6 * convert(Nanoseconds, Microseconds, mt.ticks).toBiggestFloat()
-  result = TimeSML(micros)
-
 proc timeSenML*(ms: Millis): TimeSML =
   var msf = 1.0e-3 * ms.int64.toBiggestFloat()
   result = TimeSML(msf)
@@ -54,3 +49,10 @@ proc timeSenML*(ms: Millis): TimeSML =
 proc timeSenML*(us: Micros): TimeSML =
   var usf = 1.0e-6 * us.int64.toBiggestFloat()
   result = TimeSML(usf)
+
+proc timeSenML*(mt: MonoTime): TimeSML =
+  var ts = 1.0e-6 * convert(Nanoseconds, Microseconds, mt.ticks).toBiggestFloat()
+  result = TimeSML(ts)
+
+proc currTimeSenML*(): TimeSML =
+  result = timeSenML(getMonoTime())
