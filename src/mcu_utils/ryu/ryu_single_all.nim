@@ -1,4 +1,309 @@
+
 # Copyright 2018 Ulf Adams
+#
+# The contents of this file may be used under the terms of the Apache License,
+# Version 2.0.
+#
+#    (See accompanying file LICENSE-Apache or copy at
+#     http://www.apache.org/licenses/LICENSE-2.0)
+#
+# Alternatively, the contents of this file may be used under the terms of
+# the Boost Software License, Version 1.0.
+#    (See accompanying file LICENSE-Boost or copy at
+#     https://www.boost.org/LICENSE_1_0.txt)
+#
+# Unless required by applicable law or agreed to in writing, this software
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.
+
+# A table of all two-digit numbers. This is used to speed up decimal digit
+# generation by copying pairs of digits into the final output.
+const DIGIT_TABLE* = [
+  '0','0','0','1','0','2','0','3','0','4','0','5','0','6','0','7','0','8','0','9',
+  '1','0','1','1','1','2','1','3','1','4','1','5','1','6','1','7','1','8','1','9',
+  '2','0','2','1','2','2','2','3','2','4','2','5','2','6','2','7','2','8','2','9',
+  '3','0','3','1','3','2','3','3','3','4','3','5','3','6','3','7','3','8','3','9',
+  '4','0','4','1','4','2','4','3','4','4','4','5','4','6','4','7','4','8','4','9',
+  '5','0','5','1','5','2','5','3','5','4','5','5','5','6','5','7','5','8','5','9',
+  '6','0','6','1','6','2','6','3','6','4','6','5','6','6','6','7','6','8','6','9',
+  '7','0','7','1','7','2','7','3','7','4','7','5','7','6','7','7','7','8','7','9',
+  '8','0','8','1','8','2','8','3','8','4','8','5','8','6','8','7','8','8','8','9',
+  '9','0','9','1','9','2','9','3','9','4','9','5','9','6','9','7','9','8','9','9'
+]# Copyright 2018 Ulf Adams
+#
+# The contents of this file may be used under the terms of the Apache License,
+# Version 2.0.
+#
+#    (See accompanying file LICENSE-Apache or copy at
+#     http://www.apache.org/licenses/LICENSE-2.0)
+#
+# Alternatively, the contents of this file may be used under the terms of
+# the Boost Software License, Version 1.0.
+#    (See accompanying file LICENSE-Boost or copy at
+#     https://www.boost.org/LICENSE_1_0.txt)
+#
+# Unless required by applicable law or agreed to in writing, this software
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.
+
+template pow5bits*(e: int32): int32 =
+  # Returns if e == 0: 1 else: ceil(log_2(5^e)); requires 0 <= e <= 3528.
+  # This approximation works up to the point that the multiplication overflows at e = 3529.
+  # If the multiplication were done in 64 bits, it would fail at 5^4004 which is just greater
+  # than 2^9297.
+  assert e in 0..3528
+  int32(((e.uint32 * 1217359) shr 19) + 1)
+
+template log10Pow2*(e: int32): uint32 =
+  # Returns floor(log_10(2^e)); requires 0 <= e <= 1650.
+  # The first value this approximation fails for is 2^1651 which is just greater than 10^297.
+  assert e in 0..1650
+  (e.uint32 * 78913) shr 18
+
+template log10Pow5*(e: int32): uint32 =
+  # Returns floor(log_10(5^e)); requires 0 <= e <= 2620.
+  # The first value this approximation fails for is 5^2621 which is just greater than 10^1832.
+  assert e in 0..2620
+  (e.uint32 * 732923) shr 20
+
+proc copy_special_str*(resul: var string, sign, exponent, mantissa: bool): int32 {.inline.} =
+  if mantissa:
+    resul = "NaN"
+    return 3
+  if sign:
+    resul[0] = '-'
+  if exponent:
+    resul[ord(sign)..<ord(sign)+8] = "Infinity"
+    return int32(sign) + 8
+  resul[ord(sign)..<ord(sign)+3] = "0E0"
+  return int32(sign) + 3# Copyright 2018 Ulf Adams
+#
+# The contents of this file may be used under the terms of the Apache License,
+# Version 2.0.
+#
+#    (See accompanying file LICENSE-Apache or copy at
+#     http://www.apache.org/licenses/LICENSE-2.0)
+#
+# Alternatively, the contents of this file may be used under the terms of
+# the Boost Software License, Version 1.0.
+#    (See accompanying file LICENSE-Boost or copy at
+#     https://www.boost.org/LICENSE_1_0.txt)
+#
+# Unless required by applicable law or agreed to in writing, this software
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.
+
+
+proc umul128*(a, b: uint64, productHi: var uint64): uint64 {.inline.} =
+  # The casts here help MSVC to avoid calls to the __allmul library function.
+  let aLo = uint32 a
+  let aHi = uint32 a shr 32
+  let bLo = uint32 b
+  let bHi = uint32 b shr 32
+
+  let b00: uint64 = aLo.uint64 * bLo
+  let b01: uint64 = aLo.uint64 * bHi
+  let b10: uint64 = aHi.uint64 * bLo
+  let b11: uint64 = aHi.uint64 * bHi
+
+  let b00Lo = uint32 b00
+  let b00Hi = uint32 b00 shr 32
+
+  let mid1: uint64 = b10 + b00Hi
+  let mid1Lo = uint32 mid1
+  let mid1Hi = uint32 mid1 shr 32
+
+  let mid2: uint64 = b01 + mid1Lo
+  let mid2Lo = uint32 mid2
+  let mid2Hi = uint32 mid2 shr 32
+
+  let pHi: uint64 = b11 + mid1Hi + mid2Hi
+  let pLo: uint64 = b00Lo or mid2Lo.uint64 shl 32
+
+  productHi = pHi
+  return pLo
+
+proc shiftright128*(lo, hi: uint64, dist: uint32): uint64 {.inline.} =
+  # We don't need to handle the case dist >= 64 here (see above).
+  assert dist < 64
+  when defined(RYU_OPTIMIZE_SIZE) or not defined(RYU_32_BIT_PLATFORM):
+    assert dist > 0
+    (hi shl (64 - dist)) or (lo shr dist)
+  else:
+    # Avoid a 64-bit shift by taking advantage of the range of shift values.
+    assert dist >= 32
+    (hi shl (64 - dist)) or uint32(lo shr 32) shr (dist - 32)
+
+proc pow5Factor(value: uint64): uint32 {.inline.} =
+  var value = value
+  while true:
+    assert value != 0
+    let q: uint64 = value div 5
+    let r: uint32 = value.uint32 - 5 * q.uint32
+    if r != 0:
+      break
+    value = q
+    inc result
+
+proc multipleOfPowerOf5*(value: uint64, p: uint32): bool {.inline.} = pow5Factor(value) >= p
+  # Returns true if value is divisible by 5^p.
+  # I tried a case distinction on p, but there was no performance difference.
+
+proc multipleOfPowerOf2*(value: uint64, p: uint32): bool {.inline.} =
+  # Returns true if value is divisible by 2^p.
+  assert value != 0
+  # __builtin_ctzll doesn't appear to be faster here.
+  (value and ((1'u64 shl p) - 1)) == 0
+
+proc mulShiftAll64*(m: uint64, mul: array[2, uint64], j: int32, vp, vm: var uint64, mmShift: uint32): uint64 {.inline.} =
+  # This is faster if we don't have a 64x64->128-bit multiplication.
+  let m = m shl 1
+  # m is maximum 55 bits
+  var tmp: uint64
+  let lo: uint64 = umul128(m, mul[0], tmp)
+  var hi: uint64
+  let mid: uint64 = tmp + umul128(m, mul[1], hi)
+  hi += uint64(mid < tmp) # overflow into hi
+
+  let lo2: uint64 = lo + mul[0]
+  let mid2: uint64 = mid + mul[1] + uint64(lo2 < lo)
+  let hi2: uint64 = hi + uint64(mid2 < mid)
+  vp = shiftright128(mid2, hi2, uint32(j - 64 - 1))
+
+  if mmShift == 1:
+    let lo3: uint64 = lo - mul[0]
+    let mid3: uint64 = mid - mul[1] - uint64(lo3 > lo)
+    let hi3: uint64 = hi - uint64(mid3 > mid)
+    vm = shiftright128(mid3, hi3, uint32(j - 64 - 1))
+  else:
+    let lo3: uint64 = lo + lo
+    let mid3: uint64 = mid + mid + uint64(lo3 < lo)
+    let hi3: uint64 = hi + hi + uint64(mid3 < mid)
+    let lo4: uint64 = lo3 - mul[0]
+    let mid4: uint64 = mid3 - mul[1] - uint64(lo4 > lo3)
+    let hi4: uint64 = hi3 - uint64(mid4 > mid3)
+    vm = shiftright128(mid4, hi4, uint32(j - 64))
+
+  return shiftright128(mid, hi, uint32(j - 64 - 1))# Copyright 2018 Ulf Adams
+#
+# The contents of this file may be used under the terms of the Apache License,
+# Version 2.0.
+#
+#    (See accompanying file LICENSE-Apache or copy at
+#     http://www.apache.org/licenses/LICENSE-2.0)
+#
+# Alternatively, the contents of this file may be used under the terms of
+# the Boost Software License, Version 1.0.
+#    (See accompanying file LICENSE-Boost or copy at
+#     https://www.boost.org/LICENSE_1_0.txt)
+#
+# Unless required by applicable law or agreed to in writing, this software
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.
+
+
+# These tables are generated by PrintDoubleLookupTable.
+const DOUBLE_POW5_INV_BITCOUNT* = 125
+const DOUBLE_POW5_BITCOUNT* = 125
+
+const DOUBLE_POW5_INV_SPLIT2: array[13, array[2, uint64]] = [
+  [                    1'u64, 2305843009213693952'u64 ],
+  [  5955668970331000884'u64, 1784059615882449851'u64 ],
+  [  8982663654677661702'u64, 1380349269358112757'u64 ],
+  [  7286864317269821294'u64, 2135987035920910082'u64 ],
+  [  7005857020398200553'u64, 1652639921975621497'u64 ],
+  [ 17965325103354776697'u64, 1278668206209430417'u64 ],
+  [  8928596168509315048'u64, 1978643211784836272'u64 ],
+  [ 10075671573058298858'u64, 1530901034580419511'u64 ],
+  [   597001226353042382'u64, 1184477304306571148'u64 ],
+  [  1527430471115325346'u64, 1832889850782397517'u64 ],
+  [ 12533209867169019542'u64, 1418129833677084982'u64 ],
+  [  5577825024675947042'u64, 2194449627517475473'u64 ],
+  [ 11006974540203867551'u64, 1697873161311732311'u64 ]
+]
+const POW5_INV_OFFSETS: array[19, uint32] = [
+  0x54544554'u32, 0x04055545'u32, 0x10041000'u32, 0x00400414'u32, 0x40010000'u32, 0x41155555'u32,
+  0x00000454'u32, 0x00010044'u32, 0x40000000'u32, 0x44000041'u32, 0x50454450'u32, 0x55550054'u32,
+  0x51655554'u32, 0x40004000'u32, 0x01000001'u32, 0x00010500'u32, 0x51515411'u32, 0x05555554'u32,
+  0x00000000'u32
+]
+
+const DOUBLE_POW5_SPLIT2: array[13, array[2, uint64]] = [
+  [                    0'u64, 1152921504606846976'u64 ],
+  [                    0'u64, 1490116119384765625'u64 ],
+  [  1032610780636961552'u64, 1925929944387235853'u64 ],
+  [  7910200175544436838'u64, 1244603055572228341'u64 ],
+  [ 16941905809032713930'u64, 1608611746708759036'u64 ],
+  [ 13024893955298202172'u64, 2079081953128979843'u64 ],
+  [  6607496772837067824'u64, 1343575221513417750'u64 ],
+  [ 17332926989895652603'u64, 1736530273035216783'u64 ],
+  [ 13037379183483547984'u64, 2244412773384604712'u64 ],
+  [  1605989338741628675'u64, 1450417759929778918'u64 ],
+  [  9630225068416591280'u64, 1874621017369538693'u64 ],
+  [   665883850346957067'u64, 1211445438634777304'u64 ],
+  [ 14931890668723713708'u64, 1565756531257009982'u64 ]
+]
+const POW5_OFFSETS: array[21, uint32] = [
+  0x00000000'u32, 0x00000000'u32, 0x00000000'u32, 0x00000000'u32, 0x40000000'u32, 0x59695995'u32,
+  0x55545555'u32, 0x56555515'u32, 0x41150504'u32, 0x40555410'u32, 0x44555145'u32, 0x44504540'u32,
+  0x45555550'u32, 0x40004000'u32, 0x96440440'u32, 0x55565565'u32, 0x54454045'u32, 0x40154151'u32,
+  0x55559155'u32, 0x51405555'u32, 0x00000105'u32
+]
+
+const DOUBLE_POW5_TABLE: array[26, uint64] = [
+1'u64, 5'u64, 25'u64, 125'u64, 625'u64, 3125'u64, 15625'u64, 78125'u64, 390625'u64,
+1953125'u64, 9765625'u64, 48828125'u64, 244140625'u64, 1220703125'u64, 6103515625'u64,
+30517578125'u64, 152587890625'u64, 762939453125'u64, 3814697265625'u64,
+19073486328125'u64, 95367431640625'u64, 476837158203125'u64,
+2384185791015625'u64, 11920928955078125'u64, 59604644775390625'u64,
+298023223876953125'u64 #, 1490116119384765625'u64
+]
+
+proc double_computePow5*(i: uint32): array[2, uint64] {.inline.} =
+  # Computes 5^i in the form required by Ryu, and stores it in the given pointer.
+  let base: uint32 = i div DOUBLE_POW5_TABLE.len
+  let base2: uint32 = base * DOUBLE_POW5_TABLE.len
+  let offset: uint32 = i - base2
+  let mul: array[2, uint64] = DOUBLE_POW5_SPLIT2[base]
+  if offset == 0:
+    result[0] = mul[0]
+    result[1] = mul[1]
+    return
+  let m: uint64 = DOUBLE_POW5_TABLE[offset]
+  var high1: uint64
+  let low1: uint64 = umul128(m, mul[1], high1)
+  var high0: uint64
+  let low0: uint64 = umul128(m, mul[0], high0)
+  let sum: uint64 = high0 + low1
+  if sum < high0:
+    inc high1 # overflow into high1
+  # high1 | sum | low0
+  let delta: uint32 = uint32 pow5bits(int32 i) - pow5bits(int32 base2)
+  result[0] = shiftright128(low0, sum, delta) + ((POW5_OFFSETS[i div 16] shr ((i mod 16) shl 1)) and 3)
+  result[1] = shiftright128(sum, high1, delta)
+
+proc double_computeInvPow5*(i: uint32): array[2, uint64] {.inline.} =
+  # Computes 5^-i in the form required by Ryu, and stores it in the given pointer.
+  let base: uint32 = (i + DOUBLE_POW5_TABLE.len - 1) div DOUBLE_POW5_TABLE.len
+  let base2: uint32 = base * DOUBLE_POW5_TABLE.len
+  let offset: uint32 = base2 - i
+  let mul: array[2, uint64] = DOUBLE_POW5_INV_SPLIT2[base] # 1/5^base2
+  if offset == 0:
+    result[0] = mul[0]
+    result[1] = mul[1]
+    return
+  let m: uint64 = DOUBLE_POW5_TABLE[offset]
+  var high1: uint64
+  let low1: uint64 = umul128(m, mul[1], high1)
+  var high0: uint64
+  let low0: uint64 = umul128(m, mul[0] - 1, high0)
+  let sum: uint64 = high0 + low1
+  if sum < high0:
+    inc high1 # overflow into high1
+  # high1 | sum | low0
+  let delta: uint32 = uint32 pow5bits(int32 base2) - pow5bits(int32 i)
+  result[0] = shiftright128(low0, sum, delta) + 1 + ((POW5_INV_OFFSETS[i div 16] shr ((i mod 16) shl 1)) and 3)
+  result[1] = shiftright128(sum, high1, delta)# Copyright 2018 Ulf Adams
 #
 # The contents of this file may be used under the terms of the Apache License,
 # Version 2.0.
@@ -25,10 +330,7 @@
 #
 # -d:RYU_FLOAT_FULL_TABLE
 
-import common
-import digit_table
 
-import d2s_small_table
 const FLOAT_POW5_INV_BITCOUNT = (DOUBLE_POW5_INV_BITCOUNT - 64)
 const FLOAT_POW5_BITCOUNT = (DOUBLE_POW5_BITCOUNT - 64)
 
