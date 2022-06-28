@@ -25,6 +25,11 @@ type
   Volts64* = distinct float64
   Amps64* = distinct float64
 
+import ryu/ryu_single
+
+proc toString*[F](v: F): string =
+  result = f2s(v.float32)
+ 
 proc `~=` *[T: float32](x, y: T, eps = 1.0e-6): bool = abs(x-y) < eps
 proc `~=` *[T: float64](x, y: T, eps = 1.0e-6): bool = abs(x-y) < eps
 
@@ -104,25 +109,27 @@ divMathBorrows(UBits64)
 proc repr*(ts: UBits64): string =
   return $(ts.uint64) & "'UBt64 "
 
+proc toString(val: float32|float64|float): string =
+  result = ""
 
 basicMathBorrows(Volts)
 fdivMathBorrows(Volts)
 import std/strformat
 
 proc repr*(ts: Volts): string =
-  return $(ts.int32) & "'V "
+  return $(ts.toString()) & "'V "
 
 basicMathBorrows(Amps)
 fdivMathBorrows(Amps)
 proc repr*(ts: Amps): string =
-  return $(ts.int32) & "'A "
+  return $(ts.toString()) & "'A "
 
 basicMathBorrows(Volts64)
 fdivMathBorrows(Volts64)
 proc repr*(ts: Volts64): string =
-  return $(ts.int32) & "'V "
+  return $(ts.toString()) & "'V "
 
 basicMathBorrows(Amps64)
 fdivMathBorrows(Amps64)
 proc repr*(ts: Amps64): string =
-  return $(ts.int32) & "'A "
+  return $(ts.toString()) & "'A "
