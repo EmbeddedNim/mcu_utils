@@ -1,4 +1,5 @@
 import std/hashes
+import std/strformat
 
 type
   Hertz* = distinct uint
@@ -30,7 +31,17 @@ proc toString*[F](v: F): string =
  
 proc near*[T: SomeFloat](x, y: T, eps: T): bool =
   ## checks if `x` and `y` are equal to within `eps`  
-  abs(x-y) < eps
+  result = abs(x-y) < eps
+
+proc assertNear*[T: SomeFloat](x, y: T, eps: float) =
+  ## checks if `x` and `y` are equal to within `eps`  
+  let res = abs(x-y) < eps
+  if not res:
+    raise newException(AssertionDefect, fmt"values {x=} {y=} delta {abs(x-y)=} not within {eps=}") 
+
+proc assertNear*[T: SomeFloat](x, y: T) =
+  assertNear(x, y, 1.0e-5)
+
 
 proc `~=` *[T: float64](x, y: T): bool =
   ## checks if `x` and `y` are equal to within `eps`  
@@ -71,7 +82,9 @@ template fdivMathBorrows(T: untyped) =
   proc `/` *(x, y: T): T {.borrow.}
   proc `/=` *(x: var T, y: T) {.borrow.}
   proc `~=` *(x, y: T): bool {.borrow.}
-  proc `~~=` *(x, y: T): bool {.borrow.}
+  proc `near` *(x, y: T, eps: float): bool {.borrow.}
+  proc `assertNear` *(x, y: T) {.borrow.}
+  proc `assertNear` *(x, y: T, eps: float) {.borrow.}
 
 basicMathBorrows(Millis)
 divMathBorrows(Millis)
@@ -125,7 +138,6 @@ proc repr*(ts: UBits64): string =
 
 basicMathBorrows(Volts)
 fdivMathBorrows(Volts)
-import std/strformat
 
 proc repr*(ts: Volts): string =
   return $(ts.toString()) & "'V"
