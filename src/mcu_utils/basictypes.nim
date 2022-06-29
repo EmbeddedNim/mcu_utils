@@ -28,8 +28,12 @@ type
 proc toString*[F](v: F): string =
   result = $(v.float32)
  
-proc `~=` *[T: float32](x, y: T, eps = 1.0e-6): bool = abs(x-y) < eps
-proc `~=` *[T: float64](x, y: T, eps = 1.0e-6): bool = abs(x-y) < eps
+proc `~=` *[T: float32](x, y: T, eps = 1.0e-6): bool =
+  ## checks if `x` and `y` are equal to within `eps`  
+  abs(x-y) < eps
+proc `~=` *[T: float64](x, y: T, eps = 1.0e-6): bool =
+  ## checks if `x` and `y` are equal to within `eps`  
+  abs(x-y) < eps
 
 proc `setSigned=`*[T: SomeInteger](x: var Bits16, val: T) = 
   x = Bits16( (int16(val) shl 16) shr 16)
