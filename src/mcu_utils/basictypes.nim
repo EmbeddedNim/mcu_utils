@@ -28,12 +28,23 @@ type
 proc toString*[F](v: F): string =
   result = $(v.float32)
  
-proc `~=` *[T: float32](x, y: T, eps = 1.0e-6): bool =
+proc near*[T: SomeFloat](x, y: T, eps: T): bool =
   ## checks if `x` and `y` are equal to within `eps`  
   abs(x-y) < eps
-proc `~=` *[T: float64](x, y: T, eps = 1.0e-6): bool =
+
+proc `~=` *[T: float64](x, y: T): bool =
   ## checks if `x` and `y` are equal to within `eps`  
-  abs(x-y) < eps
+  near(x, y, 1.0e-6)
+proc `~=` *[T: float32](x, y: T): bool =
+  ## checks if `x` and `y` are equal to within `eps`  
+  near(x, y, 1.0e-4)
+
+proc `~~=` *[T: float32](x, y: T): bool =
+  ## relaxed checks if `x` and `y` are equal to within `eps`  
+  near(x, y, 1.0e-3)
+proc `~~=` *[T: float64](x, y: T): bool =
+  ## relaxed checks if `x` and `y` are equal to within `eps`  
+  near(x, y, 1.0e-4)
 
 proc `setSigned=`*[T: SomeInteger](x: var Bits16, val: T) = 
   x = Bits16( (int16(val) shl 16) shr 16)
@@ -59,76 +70,77 @@ template divMathBorrows(T: untyped) =
 template fdivMathBorrows(T: untyped) =
   proc `/` *(x, y: T): T {.borrow.}
   proc `/=` *(x: var T, y: T) {.borrow.}
-  proc `~=` *(x, y: T, eps = 1.0e-6): bool {.borrow.}
+  proc `~=` *(x, y: T): bool {.borrow.}
+  proc `~~=` *(x, y: T): bool {.borrow.}
 
 basicMathBorrows(Millis)
 divMathBorrows(Millis)
 proc repr*(ts: Millis): string =
-  return $(ts.int) & "'ms "
+  return $(ts.int) & "'ms"
 
 basicMathBorrows(Micros)
 divMathBorrows(Micros)
 proc repr*(ts: Micros): string =
-  return $(ts.int) & "'us "
+  return $(ts.int) & "'us"
 
 basicMathBorrows(Bits16)
 divMathBorrows(Bits16)
 proc repr*(ts: Bits16): string =
-  return $(ts.int16) & "'Bt16 "
+  return $(ts.int16) & "'Bt16"
 
 basicMathBorrows(Bits24)
 divMathBorrows(Bits24)
 proc repr*(ts: Bits24): string =
-  return $(ts.int32) & "'Bt24 "
+  return $(ts.int32) & "'Bt24"
 
 basicMathBorrows(Bits32)
 divMathBorrows(Bits32)
 proc repr*(ts: Bits32): string =
-  return $(ts.int32) & "'Bt32 "
+  return $(ts.int32) & "'Bt32"
 
 basicMathBorrows(Bits64)
 divMathBorrows(Bits64)
 proc repr*(ts: Bits64): string =
-  return $(ts.int64) & "'Bt64 "
+  return $(ts.int64) & "'Bt64"
 
 basicMathBorrows(UBits16)
 divMathBorrows(UBits16)
 proc repr*(ts: UBits16): string =
-  return $(ts.uint16) & "'UBt16 "
+  return $(ts.uint16) & "'UBt16"
 
 basicMathBorrows(UBits24)
 divMathBorrows(UBits24)
 proc repr*(ts: UBits24): string =
-  return $(ts.uint32) & "'UBt24 "
+  return $(ts.uint32) & "'UBt24"
 
 basicMathBorrows(UBits32)
 divMathBorrows(UBits32)
 proc repr*(ts: UBits32): string =
-  return $(ts.uint32) & "'UBt32 "
+  return $(ts.uint32) & "'UBt32"
 
 basicMathBorrows(UBits64)
 divMathBorrows(UBits64)
 proc repr*(ts: UBits64): string =
-  return $(ts.uint64) & "'UBt64 "
+  return $(ts.uint64) & "'UBt64"
 
 basicMathBorrows(Volts)
 fdivMathBorrows(Volts)
 import std/strformat
 
 proc repr*(ts: Volts): string =
-  return $(ts.toString()) & "'V "
+  return $(ts.toString()) & "'V"
 
 basicMathBorrows(Amps)
 fdivMathBorrows(Amps)
 proc repr*(ts: Amps): string =
-  return $(ts.toString()) & "'A "
+  return $(ts.toString()) & "'A"
 
 basicMathBorrows(Volts64)
 fdivMathBorrows(Volts64)
 proc repr*(ts: Volts64): string =
-  return $(ts.toString()) & "'V "
+  return $(ts.toString()) & "'V"
 
 basicMathBorrows(Amps64)
 fdivMathBorrows(Amps64)
 proc repr*(ts: Amps64): string =
-  return $(ts.toString()) & "'A "
+  return $(ts.toString()) & "'A"
