@@ -23,11 +23,13 @@ type
 
   Volts* = distinct float32
   Amps* = distinct float32
+  Ohms* = distinct float32
+
   Volts64* = distinct float64
   Amps64* = distinct float64
+  Ohms64* = distinct float64
 
   Gain* = distinct float32
-  Ohm* = distinct float32
 
 proc toString*[F](v: F): string =
   result = $(v.float32)
@@ -172,9 +174,14 @@ proc repr*(ts: Gain): string =
 
 ## Ohm 
 ## ~~~
-basicMathBorrows(Ohm)
-fdivMathBorrows(Ohm)
-proc repr*(ts: Ohm): string =
-  return $(ts.toString()) & "'Ohm"
+basicMathBorrows(Ohms)
+fdivMathBorrows(Ohms)
+proc repr*(ts: Ohms): string =
+  return $(ts.toString()) & "'Ohms"
+
+basicMathBorrows(Ohms64)
+fdivMathBorrows(Ohms64)
+proc repr*(ts: Ohms64): string =
+  return $(ts.toString()) & "'Ohms"
 
 
