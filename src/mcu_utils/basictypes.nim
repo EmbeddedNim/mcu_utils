@@ -26,6 +26,9 @@ type
   Volts64* = distinct float64
   Amps64* = distinct float64
 
+  Gain* = distinct float32
+  Ohm* = distinct float32
+
 proc toString*[F](v: F): string =
   result = $(v.float32)
  
@@ -136,23 +139,42 @@ divMathBorrows(UBits64)
 proc repr*(ts: UBits64): string =
   return $(ts.uint64) & "'UBt64"
 
+## Volts 
+## ~~~~~
 basicMathBorrows(Volts)
 fdivMathBorrows(Volts)
-
 proc repr*(ts: Volts): string =
   return $(ts.toString()) & "'V"
-
-basicMathBorrows(Amps)
-fdivMathBorrows(Amps)
-proc repr*(ts: Amps): string =
-  return $(ts.toString()) & "'A"
 
 basicMathBorrows(Volts64)
 fdivMathBorrows(Volts64)
 proc repr*(ts: Volts64): string =
   return $(ts.toString()) & "'V"
 
+## Amps 
+## ~~~~
+basicMathBorrows(Amps)
+fdivMathBorrows(Amps)
+proc repr*(ts: Amps): string =
+  return $(ts.toString()) & "'A"
+
 basicMathBorrows(Amps64)
 fdivMathBorrows(Amps64)
 proc repr*(ts: Amps64): string =
   return $(ts.toString()) & "'A"
+
+## Gain 
+## ~~~~~
+basicMathBorrows(Gain)
+fdivMathBorrows(Gain)
+proc repr*(ts: Gain): string =
+  return $(ts.toString()) & "'Gain"
+
+## Ohm 
+## ~~~
+basicMathBorrows(Ohm)
+fdivMathBorrows(Ohm)
+proc repr*(ts: Ohm): string =
+  return $(ts.toString()) & "'Ohm"
+
+
