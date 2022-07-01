@@ -71,6 +71,9 @@ proc `setSigned=`*[T: SomeInteger](x: var Bits32, val: T) =
 proc `setSigned=`*[T: SomeInteger](x: var Bits64, val: T) = 
   x = Bits64( (int64(val) shl 8) shr 8)
 
+proc `signed`*[T: SomeInteger, V: Bits16|Bits24|Bits32|Bits64](v: typedesc[V], val: T): V = 
+  result.setSigned= val
+
 template basicMathBorrows(T: untyped) =
   proc `+` *(x, y: T): T {.borrow.}
   proc `-` *(x, y: T): T {.borrow.}
