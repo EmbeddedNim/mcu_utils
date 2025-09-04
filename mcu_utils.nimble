@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.5.0"
+version       = "0.5.2"
 author        = "Jaremy Creechley"
 description   = "Utilities and simple helpers for programming with Nim on embedded MCU devices"
 license       = "Apache-2.0"
