@@ -53,7 +53,7 @@ proc newQMsgBuffer*(data: sink string, pos: int = 0): QMsgBuffer =
   result = newUniquePtr(MsgBuffer.init(data))
 
 proc newQMsgBuffer*(mbuf: sink MsgBuffer): QMsgBuffer =
-  result = newQMsgBuffer(mbuf.data, mbuf.pos)
+  result = newQMsgBuffer(mbuf.data, mbuf.getPosition())
 
 proc newInetQueueItem*[T](cid: InetClientHandle, data: sink T): InetQueueItem[T] =
   new(result)

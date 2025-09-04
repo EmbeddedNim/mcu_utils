@@ -34,66 +34,56 @@ when not declared SomeFloat:
 import macros, streams
 import binstream
 
-export binstream
+export binstream, streams
 
 type
+  EncodingMode* = enum
+    MSGPACK_OBJ_TO_DEFAULT
+    MSGPACK_OBJ_TO_ARRAY
+    MSGPACK_OBJ_TO_MAP
+    MSGPACK_OBJ_TO_STREAM
 
-  MsgBuffer* = ref object
-    data*: string
-    pos*: int
+  MsgBuffer* = ref object of StringStreamObj
+    encodingMode: EncodingMode
 
-proc init*(x: typedesc[MsgBuffer], cap: int = 0): MsgBuffer =
-  result = new(x)
-  result.data = newStringOfCap(cap)
-  result.pos = 0
+{.push gcsafe.}
 
-proc init*(x: typedesc[MsgBuffer], data: sink string): MsgBuffer =
-  result = new(x)
+proc init*(x: typedesc[MsgBuffer], data: sink string, encodingMode = MSGPACK_OBJ_TO_DEFAULT): MsgBuffer =
+  result = new x
+  # Initialize StringStream base by copying fields from a new StringStream:
+  var ss = newStringStream()
   result.data = data
-  result.pos = 0
-
-proc writeData(s: MsgBuffer, buffer: pointer, bufLen: int) =
-  if bufLen <= 0: return
-  if s.pos + bufLen > s.data.len:
-    setLen(s.data, s.pos + bufLen)
-  copyMem(addr(s.data[s.pos]), buffer, bufLen)
-  inc(s.pos, bufLen)
-
-proc writeRawData*(s: MsgBuffer, buffer: pointer, bufLen: int) =
-  s.writeData(buffer, bufLen)
-
-proc write*[T](s: MsgBuffer, val: sink T) =
-  var y: T
-  y = val
-  writeData(s, addr(y), sizeof(y))
-
-proc write*(s: MsgBuffer, val: string) =
-  if val.len > 0: writeData(s, unsafeAddr val[0], val.len)
-proc write*(s: MsgBuffer, val: string, length: int) =
-  if val.len > 0: writeData(s, unsafeAddr val[0], min(val.len(), length))
-proc write*(s: MsgBuffer, val: openarray[char], length: int) =
-  if val.len > 0: writeData(s, unsafeAddr val[0], min(val.len(), length))
-
-proc readData(s: MsgBuffer, buffer: pointer, bufLen: int): int =
-  result = min(bufLen, s.data.len - s.pos)
-  if result > 0:
-    copyMem(buffer, addr(s.data[s.pos]), result)
-    inc(s.pos, result)
+  result.closeImpl = ss.closeImpl
+  result.atEndImpl = ss.atEndImpl
+  result.setPositionImpl = ss.setPositionImpl
+  result.getPositionImpl = ss.getPositionImpl
+  result.readDataStrImpl = ss.readDataStrImpl
+  when nimvm:
+    discard
   else:
-    result = 0
+    result.readDataImpl = ss.readDataImpl
+    result.peekDataImpl = ss.peekDataImpl
+    result.writeDataImpl = ss.writeDataImpl
+  result.encodingMode = encodingMode
 
-proc read*[T](s: MsgBuffer, result: var T) =
-  if s.readData(addr(result), sizeof(T)) != sizeof(T):
-    doAssert(false)
+proc init*(x: typedesc[MsgBuffer], cap: int = 0, encodingMode = MSGPACK_OBJ_TO_DEFAULT): MsgBuffer =
+  result = init(x, newStringOfCap(cap), encodingMode)
 
-proc readStr*(s: MsgBuffer, length: int): string =
-  result = newString(length)
-  if length != 0:
-    var L = s.readData(addr(result[0]), length)
-    if L != length: raise newException(IOError, "string len mismatch")
+proc initMsgStream*(cap: int = 0, encodingMode = MSGPACK_OBJ_TO_DEFAULT): MsgBuffer {.deprecated: "use MsgBuffer.init instead".} =
+  result = MsgBuffer.init(cap, encodingMode)
+
+proc initMsgStream*(data: string, encodingMode = MSGPACK_OBJ_TO_DEFAULT): MsgBuffer {.deprecated: "use MsgBuffer.init instead".} =
+  result = MsgBuffer.init(data, encodingMode)
+
+proc setEncodingMode*(s: MsgBuffer, encodingMode: EncodingMode) =
+  s.encodingMode = encodingMode
+
+proc getEncodingMode*(s: MsgBuffer): EncodingMode =
+  s.encodingMode
+
 
 proc readStrRemaining*(s: MsgBuffer): string =
-  let ln = s.data.len() - s.pos 
+  let ln = s.data.len() - s.getPosition() 
   result = newString(ln)
   if ln != 0:
     var rl = s.readData(addr(result[0]), ln)
@@ -103,79 +93,55 @@ proc readMsgBuffer*(s: MsgBuffer, length: int): MsgBuffer =
   result = MsgBuffer.init(length)
   if length != 0:
     var L = s.readData(addr(result.data[0]), length)
-    result.pos = L
+    result.setPosition(L)
 
 proc readMsgBufferRemaining*(s: MsgBuffer): MsgBuffer =
-  result = s.readMsgBuffer(s.data.len() - s.pos)
+  result = s.readMsgBuffer(s.data.len() - s.getPosition())
 
-proc readChar*(s: MsgBuffer): char =
-  s.read(result)
+when false:
+  proc getParamIdent(n: NimNode): NimNode =
+    n.expectKind({nnkIdent, nnkVarTy, nnkSym})
+    if n.kind in {nnkIdent, nnkSym}:
+      result = n
+    else:
+      result = n[0]
 
-proc readInt8*(s: MsgBuffer): int8 =
-  s.read(result)
+  proc hasDistinctImpl*(w: NimNode, z: NimNode): bool =
+    for k in w:
+      let p = k.getImpl()[3][2][1]
+      if p.kind in {nnkIdent, nnkVarTy, nnkSym}:
+        let paramIdent = getParamIdent(p)
+        if eqIdent(paramIdent, z): return true
 
-proc readInt16*(s: MsgBuffer): int16 =
-  s.read(result)
+  proc needToSkip(typ: NimNode | typedesc, w: NimNode): bool {.compileTime.} =
+    let z = getType(typ)[1]
 
-proc readInt32*(s: MsgBuffer): int32 =
-  s.read(result)
+    if z.kind == nnkSym:
+      if hasDistinctImpl(w, z): return true
 
-proc readInt64*(s: MsgBuffer): int64 =
-  s.read(result)
+    if z.kind != nnkSym: return false
+    let impl = getImpl(z)
+    if impl.kind != nnkTypeDef: return false
+    if impl[2].kind != nnkDistinctTy: return false
+    if impl[0].kind != nnkPragmaExpr: return false
+    let prag = impl[0][1][0]
+    result = eqIdent("skipUndistinct", prag)
 
-proc peekChar*(s: MsgBuffer): char =
-  if s.pos < s.data.len: result = s.data[s.pos]
-  else: result = chr(0)
+  macro undistinctImpl*(x: typed, typ: typedesc, w: typed): untyped =
+    #this macro convert any distinct types to it's base type
+    var ty = getType(x)
+    if needToSkip(typ, w):
+      result = x
+      return
+    var isDistinct = ty.typekind == ntyDistinct
+    if isDistinct:
+      let parent = ty[1]
+      result = quote do: `parent`(`x`)
+    else:
+      result = x
 
-proc setPosition*(s: MsgBuffer, pos: int) =
-  s.pos = clamp(pos, 0, s.data.len)
+  template undistinct_pack*(x: typed): untyped =
+    undistinctImpl(x, type(x), bindSym("pack_type", brForceOpen))
 
-proc atEnd*(s: MsgBuffer): bool =
-  return s.pos >= s.data.len
-
-proc getParamIdent(n: NimNode): NimNode =
-  n.expectKind({nnkIdent, nnkVarTy, nnkSym})
-  if n.kind in {nnkIdent, nnkSym}:
-    result = n
-  else:
-    result = n[0]
-
-proc hasDistinctImpl*(w: NimNode, z: NimNode): bool =
-  for k in w:
-    let p = k.getImpl()[3][2][1]
-    if p.kind in {nnkIdent, nnkVarTy, nnkSym}:
-      let paramIdent = getParamIdent(p)
-      if eqIdent(paramIdent, z): return true
-
-proc needToSkip(typ: NimNode | typedesc, w: NimNode): bool {.compileTime.} =
-  let z = getType(typ)[1]
-
-  if z.kind == nnkSym:
-    if hasDistinctImpl(w, z): return true
-
-  if z.kind != nnkSym: return false
-  let impl = getImpl(z)
-  if impl.kind != nnkTypeDef: return false
-  if impl[2].kind != nnkDistinctTy: return false
-  if impl[0].kind != nnkPragmaExpr: return false
-  let prag = impl[0][1][0]
-  result = eqIdent("skipUndistinct", prag)
-
-macro undistinctImpl*(x: typed, typ: typedesc, w: typed): untyped =
-  #this macro convert any distinct types to it's base type
-  var ty = getType(x)
-  if needToSkip(typ, w):
-    result = x
-    return
-  var isDistinct = ty.typekind == ntyDistinct
-  if isDistinct:
-    let parent = ty[1]
-    result = quote do: `parent`(`x`)
-  else:
-    result = x
-
-template undistinct_pack*(x: typed): untyped =
-  undistinctImpl(x, type(x), bindSym("pack_type", brForceOpen))
-
-template undistinct_unpack*(x: typed): untyped =
-  undistinctImpl(x, type(x), bindSym("unpack_type", brForceOpen))
+  template undistinct_unpack*(x: typed): untyped =
+    undistinctImpl(x, type(x), bindSym("unpack_type", brForceOpen))
