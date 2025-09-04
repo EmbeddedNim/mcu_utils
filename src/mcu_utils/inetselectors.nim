@@ -59,13 +59,14 @@ proc registerEvent*(selector: EventSelector, event: SelectEvent): InetEvent {.di
 proc registerQueue*[T](selector: EventSelector, queue: InetEventQueue[T]): InetEvent {.discardable.} =
   result = selector.registerEvent(queue.evt)
 
-proc registerTimer*(selector: EventSelector, timeout: int, oneshot: bool): InetEvent {.discardable.} =
-  let fd = selector.raw.registerTimer(timeout, oneshot, InetEvent())
-  result = InetEvent(kind: Event.Timer, timeout: timeout, oneshot: oneshot, timerfd: fd)
-  if not selector.raw.setData(fd, result):
-    # todo: is this the ideal behavior?
-    selector.raw.unregister(fd)
-    raise newException(AssertionDefect, "failed to register timer properly")
+when defined(linux):
+  proc registerTimer*(selector: EventSelector, timeout: int, oneshot: bool): InetEvent {.discardable.} =
+    let fd = selector.raw.registerTimer(timeout, oneshot, InetEvent())
+    result = InetEvent(kind: Event.Timer, timeout: timeout, oneshot: oneshot, timerfd: fd)
+    if not selector.raw.setData(fd, result):
+      # todo: is this the ideal behavior?
+      selector.raw.unregister(fd)
+      raise newException(AssertionDefect, "failed to register timer properly")
 
 template withEvent*(events: Table[InetEvent, ReadyKey], event: InetEvent, asKey: untyped, code: untyped) =
   ## helper function just to check for a given event and return it's key

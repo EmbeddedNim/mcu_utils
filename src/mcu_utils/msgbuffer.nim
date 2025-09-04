@@ -47,9 +47,9 @@ proc init*(x: typedesc[MsgBuffer], cap: int = 0): MsgBuffer =
   result.data = newStringOfCap(cap)
   result.pos = 0
 
-proc init*(x: typedesc[MsgBuffer], data: string): MsgBuffer =
+proc init*(x: typedesc[MsgBuffer], data: sink string): MsgBuffer =
   result = new(x)
-  shallowCopy(result.data, data)
+  result.data = data
   result.pos = 0
 
 proc writeData(s: MsgBuffer, buffer: pointer, bufLen: int) =
@@ -62,9 +62,9 @@ proc writeData(s: MsgBuffer, buffer: pointer, bufLen: int) =
 proc writeRawData*(s: MsgBuffer, buffer: pointer, bufLen: int) =
   s.writeData(buffer, bufLen)
 
-proc write*[T](s: MsgBuffer, val: T) =
+proc write*[T](s: MsgBuffer, val: sink T) =
   var y: T
-  shallowCopy(y, val)
+  y = val
   writeData(s, addr(y), sizeof(y))
 
 proc write*(s: MsgBuffer, val: string) =
